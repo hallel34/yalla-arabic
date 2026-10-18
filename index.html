@@ -533,17 +533,28 @@ let toastT; function toast(msg){document.querySelector('.toast')?.remove();const
 
 /* speech */
 let VOICE=null;
-function pickVoice(){try{const vs=speechSynthesis.getVoices();VOICE=vs.find(v=>/^ar[-_](PS|JO|LB|SY)/i.test(v.lang))||vs.find(v=>/^ar/i.test(v.lang))||null;}catch(e){}}
+function findArabicVoice(vs){return vs.find(v=>/^ar[-_](PS|JO|LB|SY)/i.test(v.lang))||vs.find(v=>/^ar/i.test(v.lang))||vs.find(v=>/arabic/i.test(v.name))||null;}
+function pickVoice(){try{VOICE=findArabicVoice(speechSynthesis.getVoices());}catch(e){}}
 try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}catch(e){}
 const PLAYER=new Audio();
+function speakNow(text){
+  const u=new SpeechSynthesisUtterance(text.replace(/[؟?،]/g,' '));
+  if(VOICE){u.voice=VOICE;u.lang=VOICE.lang.replace('_','-');}else{u.lang='ar-SA';}
+  u.rate=.8;
+  setTimeout(()=>{try{speechSynthesis.resume();speechSynthesis.speak(u);}catch(e){}},80);
+}
 function speak(text){
   const clip=window.AUDIO&&window.AUDIO[text];
   if(clip){ try{ try{speechSynthesis.cancel();}catch(e){} PLAYER.pause(); PLAYER.src=clip; PLAYER.currentTime=0;
     PLAYER.play().catch(()=>{}); }catch(e){} return; }
   try{ if(!('speechSynthesis' in window)) throw 0;
-    if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel(); speechSynthesis.resume(); const u=new SpeechSynthesisUtterance(text.replace(/[؟?،]/g,' '));
-    u.lang=VOICE?VOICE.lang:'ar-SA'; if(VOICE)u.voice=VOICE; u.rate=.8; speechSynthesis.speak(u);
-    if(!VOICE) setTimeout(()=>{pickVoice(); if(!VOICE) toast('לא נמצא קול ערבי במכשיר. אפשר להוסיף קול "ערבית" בהגדרות ההקראה של הטלפון.');},400);
+    pickVoice();
+    if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel();
+    if(VOICE){ speakNow(text); return; }
+    let tries=0; const iv=setInterval(()=>{ pickVoice();
+      if(VOICE){ clearInterval(iv); speakNow(text); }
+      else if(++tries>=5){ clearInterval(iv); toast('לא נמצא קול ערבי במכשיר. אפשר להוסיף קול "ערבית" בהגדרות ההקראה של הטלפון.'); }
+    },300);
   }catch(e){ toast('באפליקציה של Claude אין הקראה. כדי לשמוע, פתחו את הקישור בדפדפן כרום.'); }
 }
 
