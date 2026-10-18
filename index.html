@@ -246,6 +246,20 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance
 .heard{text-align:center;color:var(--muted);font-size:15px;min-height:22px;margin-bottom:8px}
 .trace-wrap{display:grid;justify-items:center;gap:8px;margin-top:6px}
 .trace-wrap canvas{border:2px dashed var(--line);border-radius:14px;background:var(--surface);touch-action:none;width:100%;max-width:300px}
+.sheet{position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center}
+.sheet-in{background:var(--bg);width:100%;max-width:560px;max-height:90%;overflow-y:auto;border-radius:22px 22px 0 0;display:grid;gap:12px;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet-head{display:flex;align-items:center;justify-content:space-between}
+.sheet-head h2{font-size:24px}
+.sheet-head .x{background:none;border:0;font-size:28px;color:var(--muted)}
+.modes{display:grid;gap:8px}
+.mode{display:grid;gap:2px;text-align:start;border:2px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 14px}
+.mode span{font-size:13px;color:var(--muted)}
+.mode[aria-checked="true"]{border-color:var(--tile);background:var(--tile-soft)}
+.diag{margin:0;display:grid;gap:2px;font-size:14px}
+.diag dt{color:var(--muted);margin-top:6px}
+.diag dd{margin:0;font-weight:700;overflow-wrap:anywhere}
+.diag dd.fail{color:var(--bad)}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -255,7 +269,7 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance
   <header class="top wrap" style="padding-block:10px;padding-bottom:10px">
     <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><path fill="currentColor" d="M20 1l5.9 5.8h8.3v8.3L40 20l-5.8 5.9v8.3h-8.3L20 40l-5.9-5.8H5.8v-8.3L0 20l5.8-5.9V5.8h8.3z"/><text x="20" y="27" text-anchor="middle" font-size="20" font-weight="700" fill="var(--bg)" style="font-family:var(--f-ar)">ي</text></svg>
     <div class="brand">יאללה ערבית<small class="ar" lang="ar">يَلّا عَرَبي</small></div>
-    <button class="iconbtn" id="voicebtn" aria-label="החלפת קול" title="החלפת קול"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>
+    <button class="iconbtn" id="voicebtn" aria-label="הגדרות קול" title="הגדרות קול"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>
     <div class="pill streak" title="רצף ימים"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2s5 4.5 5 9.5a5 5 0 0 1-10 0c0-1.7.7-3 1.6-4C9 9.5 10 10.5 11 10.5 11 7 12 2 12 2zm0 20a7 7 0 0 1-7-7c0-1.5.5-2.8 1.2-3.9.4 3 2.5 4.4 4.3 4.4 1.5 0 2.5-1.100 2.500-2.600 1.600 1 2.500 2.700 2.500 4.600a7 7 0 0 1-3.500 6.1z" opacity=".95"/></svg><span id="streak">0</span></div>
     <div class="pill xp" title="נקודות"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1l2.600 3.300 4.100-.4.400 4.100L22.500 10.700 19.200 13.300 19.100 17.400 15 17.100 12 20.300 9 17.100 4.900 17.400 4.800 13.300 1.500 10.700 4.900 8 5.300 3.900l4.100.4z"/></svg><span id="xp">0</span></div>
   </header>
@@ -620,11 +634,17 @@ function stopSpeech(){
   try{ if(HAS_TTS&&(speechSynthesis.speaking||speechSynthesis.pending)) speechSynthesis.cancel(); }catch(e){}
 }
 function cleanForSpeech(t){return String(t).replace(/ـ/g,'').replace(/[؟?!،,.:;]/g,' ').replace(/\s+/g,' ').trim();}
-function playUrl(url,g,onFail){
+/* what was heard last, shown in the voice panel so a wrong sound can be traced to its source */
+let LAST_SRC='', LAST_FAIL='';
+function heard(src){ LAST_SRC=src; document.querySelectorAll('[data-last-src]').forEach(el=>el.textContent=src); }
+function failed(src){ LAST_FAIL=src; document.querySelectorAll('[data-last-fail]').forEach(el=>{el.textContent='לא עבד: '+src;el.hidden=false;}); }
+function playUrl(url,g,onFail,label){
+  const fail=()=>{ if(g!==GEN)return; failed(label||'שמע'); if(onFail)onFail(); };
   try{ PLAYER.src=url; PLAYER.currentTime=0;
-    const p=PLAYER.play(); if(p&&p.catch)p.catch(()=>{ if(g===GEN&&onFail)onFail(); });
-    PLAYER.onerror=()=>{ if(g===GEN&&onFail)onFail(); };
-  }catch(e){ if(onFail)onFail(); }
+    PLAYER.onplaying=()=>{ if(g===GEN&&label) heard(label); };
+    const p=PLAYER.play(); if(p&&p.catch)p.catch(fail);
+    PLAYER.onerror=fail;
+  }catch(e){ fail(); }
 }
 function noVoiceToast(){
   if(WARNED) return; WARNED=true;
@@ -662,18 +682,18 @@ function ttsText(text){
 function speakOnline(text,g,fb){
   if(navigator.onLine===false) return fb?fb():noVoiceToast();
   const url='https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ar&q='+encodeURIComponent(cleanForSpeech(ttsText(text)));
-  playUrl(url,g,fb||noVoiceToast);
+  playUrl(url,g,fb||noVoiceToast,'קול גוגל מהרשת');
 }
 function speakDevice(text,g,fallback){
   const fb=fallback||(()=>speakOnline(text,g));
   const u=new SpeechSynthesisUtterance(cleanForSpeech(ttsText(text))); CUR=u;
   u.lang=VOICE?VOICE.lang:'ar-SA'; if(VOICE)u.voice=VOICE; u.rate=.85; u.pitch=1; u.volume=1;
-  let started=false; u.onstart=()=>{started=true;};
-  u.onerror=ev=>{ if(g!==GEN||started||ev.error==='canceled'||ev.error==='interrupted')return; fb(); };
+  let started=false; u.onstart=()=>{started=true; heard('קול המכשיר'+(VOICE?': '+VOICE.name:''));};
+  u.onerror=ev=>{ if(g!==GEN||started||ev.error==='canceled'||ev.error==='interrupted')return; failed('קול המכשיר ('+ev.error+')'); fb(); };
   /* Chrome drops a speak() that comes right after cancel(), so give it a beat */
   setTimeout(()=>{ if(g!==GEN)return; try{speechSynthesis.resume();speechSynthesis.speak(u);}catch(e){return fb();} },70);
   /* some engines accept the call and stay silent: fall back if nothing starts */
-  setTimeout(()=>{ if(g===GEN&&!started&&!speechSynthesis.speaking) fb(); },2200);
+  setTimeout(()=>{ if(g===GEN&&!started&&!speechSynthesis.speaking){ failed('קול המכשיר שתק'); fb(); } },2200);
 }
 /* voice mode: auto = a real device voice if there is one, else the recorded clips; clips; device */
 let VMODE='auto'; try{VMODE=localStorage.getItem('yalla-voice')||'auto';}catch(e){}
@@ -684,22 +704,49 @@ function speak(text){
   stopSpeech(); const g=GEN;
   if(HAS_TTS&&!VOICE) pickVoice();
   const clip=window.AUDIO&&window.AUDIO[text];
-  const playClip=clip?()=>playUrl(clip,g,()=>speakOnline(text,g)):null;
-  if(VMODE==='online') return speakOnline(text,g,playClip);
+  const playClip=clip?()=>playUrl(clip,g,()=>speakOnline(text,g),'הקלטה'):null;
+  const web=()=>speakOnline(text,g,playClip);
+  if(VMODE==='online') return web();
+  if(VMODE==='clips') return playClip?playClip():web();
   /* Android Chrome may report no voices at all and still speak, so an empty list counts as "try the device" */
-  const dev=VMODE==='clips'?false:!!(HAS_TTS&&(VMODE==='device'?(VOICE||VOICE_COUNT===0):(goodDeviceVoice()||VOICE_COUNT===0)));
-  if(dev) return speakDevice(text,g,playClip);
+  const dev=!!(HAS_TTS&&(VMODE==='device'?(VOICE||VOICE_COUNT===0):(goodDeviceVoice()||VOICE_COUNT===0)));
+  const online=navigator.onLine!==false;
+  if(dev) return speakDevice(text,g,VMODE==='auto'&&online?web:playClip);
+  if(online) return web();
   if(playClip) return playClip();
   if(HAS_TTS&&(VOICE||VOICE_COUNT===0)) return speakDevice(text,g);
   speakOnline(text,g);
 }
 function voiceName(){return VOICE?VOICE.name+' ('+VOICE.lang+')':null;}
-function testVoice(){
-  const order=['auto','clips','device','online'];
-  VMODE=order[(order.indexOf(VMODE)+1)%4]; try{localStorage.setItem('yalla-voice',VMODE);}catch(e){}
-  pickVoice(); speak('مَرْحَبا، يَلّا نِتْعَلَّم عَرَبي');
-  const using=VMODE==='online'?'קול מהרשת':VMODE==='clips'?'קול מוקלט':VOICE?'קול המכשיר: '+voiceName():HAS_TTS&&VOICE_COUNT===0?'קול המכשיר':'קול מוקלט, לא נמצא קול ערבי במכשיר ('+VOICE_COUNT+' קולות)';
-  setTimeout(()=>toast('מצב קול: '+VMODES[VMODE]+' ('+using+'). לחצו שוב להחלפה.'),250);
+const APP_VERSION='2026-10-19';
+function voicePanel(){
+  document.getElementById('voice-sheet')?.remove();
+  pickVoice();
+  let all=[]; try{ all=HAS_TTS?speechSynthesis.getVoices()||[]:[]; }catch(e){}
+  const arv=all.filter(v=>voiceScore(v)>0);
+  const sheet=h('div',{class:'sheet',id:'voice-sheet',role:'dialog','aria-modal':'true','aria-label':'הגדרות קול',onclick:e=>{if(e.target===sheet)sheet.remove();}});
+  const modes=h('div',{class:'modes',role:'radiogroup'});
+  [['auto','אוטומטי','קול ערבי במכשיר, ואם אין: קול גוגל מהרשת, ואם אין אינטרנט: הקלטות'],
+   ['online','קול גוגל מהרשת','אותו קול כמו בגוגל טרנסלייט. צריך אינטרנט'],
+   ['device','קול המכשיר','הקול הערבי שמותקן בטלפון'],
+   ['clips','הקלטות','עובד גם בלי אינטרנט ובלי קול במכשיר']].forEach(([k,name,desc])=>{
+    modes.append(h('button',{class:'mode',role:'radio','aria-checked':String(VMODE===k),onclick:()=>{
+      VMODE=k; try{localStorage.setItem('yalla-voice',k);}catch(e){}
+      modes.querySelectorAll('.mode').forEach(m=>m.setAttribute('aria-checked','false')); modes.children[['auto','online','device','clips'].indexOf(k)].setAttribute('aria-checked','true');
+      speak('خَمْسة');}},h('b',{},name),h('span',{},desc)));
+  });
+  sheet.append(h('div',{class:'sheet-in'},
+    h('div',{class:'sheet-head'},h('h2',{},'קול'),h('button',{class:'x','aria-label':'סגור',onclick:()=>sheet.remove()},'×')),
+    modes,
+    h('button',{class:'btn wide',onclick:()=>speak('خَمْسة')},'השמע דוגמה: ',ar('خَمْسة')),
+    h('dl',{class:'diag'},
+      h('dt',{},'מה נשמע עכשיו'),h('dd',{'data-last-src':''},LAST_SRC||'עוד לא הושמע כלום'),
+      h('dd',{'data-last-fail':'',class:'fail',hidden:!LAST_FAIL},'לא עבד: '+LAST_FAIL),
+      h('dt',{},'קולות ערביים במכשיר'),h('dd',{},arv.length?arv.map(v=>v.name+' ('+v.lang+')').join(', '):'אין'),
+      h('dt',{},'כל הקולות במכשיר'),h('dd',{},String(all.length)),
+      h('dt',{},'גרסה'),h('dd',{},APP_VERSION)),
+    !arv.length?h('p',{class:'note'},'כדי שהטלפון ידבר בקול של גוגל: הגדרות ← ניהול כללי ← המרת טקסט לדיבור ← מנוע מועדף: "Speech Services by Google" (לא Samsung), ובשפה לבחור ערבית. אחר כך לסגור את כרום לגמרי ולפתוח מחדש.'):null));
+  document.body.append(sheet);
 }
 
 /* ===================== RENDER: TOP + PATH ===================== */
@@ -1110,7 +1157,7 @@ function setTab(t){TAB=t;try{localStorage.setItem(KEY+'-tab',t);}catch(e){}
   ['path','review','talk','couple'].forEach(x=>document.getElementById('tab-'+x).hidden=x!==t);
   ({path:renderPath,review:renderReview,talk:renderTalk,couple:renderCouple})[t](); window.scrollTo(0,0);}
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
-document.getElementById('voicebtn').addEventListener('click',testVoice);
+document.getElementById('voicebtn').addEventListener('click',voicePanel);
 pickVoice();
 function renderAll(){renderTop();({path:renderPath,review:renderReview,talk:renderTalk,couple:renderCouple})[TAB]();}
 setTab(TAB);

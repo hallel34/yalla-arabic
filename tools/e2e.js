@@ -43,15 +43,21 @@ const clipKey=(p,src)=>p.evaluate(s=>Object.keys(window.AUDIO).find(k=>window.AU
   p=await open(browser,[],{silent:true});
   await p.evaluate(()=>speak('خَمْسة')); await p.waitForTimeout(2600);
   let pl=await p.evaluate(()=>window.__played);
-  const k2=pl.length?await clipKey(p,pl[0]):null;
-  ok(pl.length===1&&k2==='خَمْسة',`silent device falls back to the recorded clip (${pl.length} played, ${k2})`);
+  const k2=pl.length?await clipKey(p,pl.at(-1)):null;
+  ok(pl[0]&&pl[0].includes('translate_tts')&&k2==='خَمْسة',`silent device: Google web voice next, then the clip (${pl.length} played, last ${k2})`);
   await p.close();
 
   // 3. Only non-Arabic voices: the clip plays right away
   p=await open(browser,[{name:'English',lang:'en-US'}]);
   await p.evaluate(()=>speak('خَمْسة')); await p.waitForTimeout(150);
   pl=await p.evaluate(()=>window.__played); sp=await p.evaluate(()=>window.__spoken);
-  ok(sp.length===0&&pl.length===1&&await clipKey(p,pl[0])==='خَمْسة','no Arabic voice: recorded clip, no wrong-language voice');
+  ok(sp.length===0&&pl[0]&&pl[0].includes('translate_tts')&&pl[0].includes(encodeURIComponent('خَمْسَ')),'no Arabic voice: Google web voice (the Translate voice) first, never a wrong-language voice');
+  ok(await clipKey(p,pl.at(-1))==='خَمْسة','web voice blocked: falls back to the recorded clip');
+  await p.click('#voicebtn'); await p.waitForTimeout(100);
+  const diag=await p.evaluate(()=>document.querySelector('.diag').innerText);
+  ok(/לא עבד: קול גוגל מהרשת/.test(diag)&&/קולות ערביים במכשיר\s*אין/.test(diag),'voice panel shows the failed source and that no Arabic voice exists');
+  await p.click('.mode:nth-child(4)'); await p.waitForTimeout(150);
+  ok(await p.evaluate(()=>localStorage.getItem('yalla-voice'))==='clips','voice mode choice is saved');
   await p.close();
 
   // 4. No speech engine at all (in-app browsers): every lesson, every exercise, each spoken text has a clip
