@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B6E6A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="יאללה ערבית">
 <title>יאללה ערבית</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Noto+Naskh+Arabic:wght@500;700&family=Secular+One&display=swap">
@@ -181,6 +184,19 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance
 .done-stats div{border:2px solid var(--line);border-radius:14px;padding:10px 18px;min-width:110px}
 .done-stats b{display:block;font-family:var(--f-display);font-size:28px;font-variant-numeric:tabular-nums}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));z-index:80;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;max-width:calc(100% - 32px)}
+/* game feel: combo badge, confetti, typing, speaking, letter tracing */
+.combo{position:fixed;top:calc(env(safe-area-inset-top,0px) + 62px);inset-inline-end:14px;z-index:70;background:var(--saffron);color:#fff;font-weight:700;padding:6px 14px;border-radius:99px;font-size:15px;box-shadow:0 2px 10px rgba(0,0,0,.25);animation:pop .25s}
+@keyframes pop{50%{transform:scale(1.18)}}
+.confetti{position:fixed;inset:0;z-index:90;pointer-events:none}
+.typing{display:flex;gap:8px}
+.typing input{flex:1;min-width:0;border:2px solid var(--line);border-bottom-width:4px;border-radius:14px;padding:12px 16px;font:inherit;font-size:20px;background:var(--surface);color:var(--ink)}
+.typing input:focus{border-color:var(--tile);outline:none}
+.mic-btn{width:96px;height:96px;border-radius:24px;border:0;background:var(--saffron);color:#fff;display:grid;place-items:center;margin:0 auto 18px;box-shadow:0 4px 0 color-mix(in srgb,var(--saffron) 60%,#000)}
+.mic-btn.rec{animation:pulse 1s ease-in-out infinite;background:var(--bad)}
+.mic-btn svg{width:40px;height:40px}
+.heard{text-align:center;color:var(--muted);font-size:15px;min-height:22px;margin-bottom:8px}
+.trace-wrap{display:grid;justify-items:center;gap:8px;margin-top:6px}
+.trace-wrap canvas{border:2px dashed var(--line);border-radius:14px;background:var(--surface);touch-action:none;width:100%;max-width:300px}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -400,7 +416,7 @@ UNITS.forEach((u,ui)=>{
 
 /* ===================== STATE ===================== */
 const KEY='yalla-arabic-v1';
-const blank=()=>({xp:0,streak:0,lastDay:null,done:{},srs:{},days:{}});
+const blank=()=>({xp:0,streak:0,lastDay:null,done:{},srs:{},days:{},freezes:0});
 let S = blank();
 try{ const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) S=Object.assign(blank(),s);}catch(e){}
 let DB=null, USER=null, UID=null, PEOPLE=[];
@@ -421,7 +437,16 @@ async function save(){
 }
 function addXp(n){
   const today=dayKey();
-  if(S.lastDay!==today){ S.streak = (S.lastDay && dayNum(today)-dayNum(S.lastDay)===1) ? S.streak+1 : 1; S.lastDay=today; }
+  if(S.lastDay!==today){
+    const gap=S.lastDay?dayNum(today)-dayNum(S.lastDay):1;
+    if(gap===1) S.streak++;
+    else if(gap===2&&(S.freezes||0)>0){ S.freezes--; S.streak++; setTimeout(()=>toast('\u{1F9CA} הקפאת הרצף ניצלה אוטומטית - הרצף נמשך!'),700); }
+    else S.streak=1;
+    S.lastDay=today;
+    if(S.streak>0&&S.streak%7===0){ S.freezes=(S.freezes||0)+1;
+      setTimeout(()=>toast('\u{1F525} '+S.streak+' ימים ברצף! קיבלת הקפאת רצף ליום חסר'),900); }
+    else if([30,100,365].includes(S.streak)) setTimeout(()=>toast('\u{1F525} '+S.streak+' ימים ברצף. מדהים!'),900);
+  }
   S.xp+=n; S.days[today]=(S.days[today]||0)+n;
   const keep=Object.keys(S.days).sort().slice(-21); S.days=Object.fromEntries(keep.map(k=>[k,S.days[k]]));
 }
@@ -444,6 +469,64 @@ function markLetter(word,ch){const i=word.indexOf(ch);const el=h('span',{class:'
   el.append(word.slice(0,i),h('span',{class:'hl'},word.slice(i,j)),word.slice(j));return el;}
 const ar=(t,cls='')=>h('span',{class:'ar '+cls,lang:'ar',dir:'rtl'},t);
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const normHe=s2=>(s2||'').replace(/[׳״']/g,'').replace(/[֑-ׇ]/g,'').replace(/[?!.,;:"'\-–—ـ]/g,'').replace(/\(.*?\)/g,' ').replace(/ך/g,'כ').replace(/ם/g,'מ').replace(/ן/g,'נ').replace(/ף/g,'פ').replace(/ץ/g,'צ').replace(/\s+/g,' ').trim();
+const normAr=s2=>(s2||'').replace(/[ً-ْـ]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/[؟?.,!]/g,'').replace(/\s+/g,' ').trim();
+function lev(a,b){const m=a.length,n=b.length;if(Math.abs(m-n)>3)return 9;
+  const d=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);
+  for(let j=1;j<=n;j++)d[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return d[m][n];}
+
+/* game feel: sounds (WebAudio, no files), confetti, combo */
+let AC=null;
+function tone(f,t0,d,type='sine',g=.18){try{
+  AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+  if(AC.state==='suspended')AC.resume();
+  const o=AC.createOscillator(),v=AC.createGain();o.type=type;o.frequency.value=f;
+  v.gain.setValueAtTime(0,AC.currentTime+t0);v.gain.linearRampToValueAtTime(g,AC.currentTime+t0+.01);
+  v.gain.exponentialRampToValueAtTime(.001,AC.currentTime+t0+d);
+  o.connect(v).connect(AC.destination);o.start(AC.currentTime+t0);o.stop(AC.currentTime+t0+d+.05);}catch(e){}}
+const sfx={
+  good(){tone(660,0,.12);tone(880,.09,.2);},
+  bad(){tone(220,0,.2,'square',.07);tone(175,.12,.28,'square',.07);},
+  combo(){tone(990,0,.07,'triangle',.12);tone(1320,.06,.12,'triangle',.12);},
+  done(){[523,659,784,1047].forEach((f,i)=>tone(f,i*.11,.24));}
+};
+function confetti(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const c=h('canvas',{class:'confetti'});document.body.append(c);
+  const x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;
+  const cols=['#0B6E6A','#C98A12','#2B8752','#E6AE45','#36ADA4','#BE3E37'];
+  const ps=Array.from({length:120},()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height*.3,
+    w:6+Math.random()*6,h:8+Math.random()*8,c:cols[Math.random()*cols.length|0],
+    vy:2+Math.random()*3,vx:-1.5+Math.random()*3,r:Math.random()*Math.PI,vr:-.1+Math.random()*.2}));
+  let n=0;
+  (function step(){x.clearRect(0,0,c.width,c.height);
+    ps.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.w/2,-p.h/2,p.w,p.h);x.restore();});
+    if(++n<200)requestAnimationFrame(step);else c.remove();})();
+}
+function showCombo(){hideCombo(); if(!R||(R.combo||0)<3)return;
+  R.el.append(h('div',{class:'combo'},'🔥 ×'+R.combo));}
+function hideCombo(){R?.el.querySelector('.combo')?.remove();}
+const MIC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"/></svg>';
+function traceBlock(ch){
+  const cv=h('canvas',{width:'300',height:'220'});
+  const x=cv.getContext('2d');
+  const guide=()=>{x.clearRect(0,0,300,220);
+    x.font='150px "Noto Naskh Arabic",serif';x.textAlign='center';x.textBaseline='middle';
+    x.fillStyle='rgba(128,128,128,.22)';x.fillText(ch,150,118);};
+  guide();
+  let down=false;
+  const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*300/r.width,(e.clientY-r.top)*220/r.height];};
+  cv.addEventListener('pointerdown',e=>{down=true;cv.setPointerCapture(e.pointerId);const[a,b]=pos(e);x.beginPath();x.moveTo(a,b);e.preventDefault();});
+  cv.addEventListener('pointermove',e=>{if(!down)return;const[a,b]=pos(e);
+    x.lineWidth=7;x.lineCap='round';x.lineJoin='round';
+    x.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--tile').trim()||'#0B6E6A';
+    x.lineTo(a,b);x.stroke();e.preventDefault();});
+  ['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,()=>{down=false;}));
+  return h('div',{class:'trace-wrap'},h('div',{class:'note',style:'margin:0'},'תרגול כתיבה: עקבו על האות עם האצבע'),cv,
+    h('button',{class:'btn ghost',onclick:guide},'ניקוי'));
+}
 const SPK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
 function spkBtn(text,label='השמע'){const b=h('button',{class:'spk','aria-label':label,onclick:e=>{e.stopPropagation();speak(text);}});b.innerHTML=SPK;return b;}
 let toastT; function toast(msg){document.querySelector('.toast')?.remove();const t=h('div',{class:'toast',role:'status'},msg);document.body.append(t);clearTimeout(toastT);toastT=setTimeout(()=>t.remove(),3200);}
@@ -513,17 +596,33 @@ function renderReview(){
 /* ===================== LESSON RUNNER ===================== */
 let R=null;
 function hasVoice(){return !!VOICE;}
+function hasSR(){return !!(window.SpeechRecognition||window.webkitSpeechRecognition);}
 function buildLesson(L){
   const ex=[]; const ids=L.items.slice();
   for(let i=0;i<ids.length;i+=3){const c=ids.slice(i,i+3); c.forEach(id=>ex.push({type:'intro',id})); shuffle(c.slice()).forEach(id=>ex.push({type:'mc',id}));}
-  shuffle(ids.slice()).forEach(id=>ex.push({type:(ITEMS[id].kind==='word'&&hasVoice()&&Math.random()<.5)?'listen':'rev',id}));
+  shuffle(ids.slice()).forEach(id=>{
+    if(ITEMS[id].kind!=='word'){ex.push({type:Math.random()<.5?'mc':'rev',id});return;}
+    const r=Math.random(); let t='rev';
+    if(r<.22)t='type'; else if(r<.42)t='typetr';
+    else if(r<.68)t=hasVoice()?'listen':'rev';
+    else if(r<.83)t=hasSR()?'say':'rev';
+    ex.push({type:t,id});
+  });
   L.sents.forEach(s=>ex.push({type:'tiles',s}));
   return ex;
 }
 function buildReview(){
   let ids=dueIds(); if(ids.length<6){ids=Object.entries(S.srs).sort((a,b)=>a[1].b-b[1].b||a[1].d-b[1].d).map(([id])=>id).filter(id=>ITEMS[id]);}
   ids=shuffle(ids).slice(0,15);
-  const ex=ids.map(id=>({type:ITEMS[id].kind!=='word'?(Math.random()<.5?'mc':'rev'):(['mc','rev',hasVoice()?'listen':'mc'][Math.floor(Math.random()*3)]),id,srs:true}));
+  const ex=ids.map(id=>{
+    if(ITEMS[id].kind!=='word') return {type:Math.random()<.5?'mc':'rev',id,srs:true};
+    const r=Math.random(); let t;
+    if(r<.25)t='type'; else if(r<.45)t='typetr';
+    else if(r<.65)t=hasVoice()?'listen':'mc';
+    else if(r<.78)t=hasSR()?'say':'mc';
+    else t=Math.random()<.5?'mc':'rev';
+    return {type:t,id,srs:true};
+  });
   const sents=LESSONS.filter(L=>S.done[L.id]).flatMap(L=>L.sents); shuffle(sents).slice(0,3).forEach(s=>ex.splice(Math.floor(Math.random()*ex.length),0,{type:'tiles',s}));
   return ex;
 }
@@ -531,7 +630,7 @@ function startLesson(L){openRunner({lesson:L,ex:buildLesson(L)});}
 function startReview(){openRunner({lesson:null,ex:buildReview()});}
 
 function openRunner(cfg){
-  R={...cfg,i:0,total:cfg.ex.length,correct:0,wrong:0,retried:new Set()};
+  R={...cfg,i:0,total:cfg.ex.length,correct:0,wrong:0,combo:0,bonusXP:0,itemBad:{},retried:new Set()};
   const el=h('div',{class:'runner',dir:'rtl',role:'dialog','aria-modal':'true'});
   el.append(h('div',{class:'r-top'},h('button',{class:'x','aria-label':'סגור',onclick:closeRunner},'×'),h('div',{class:'bar'},h('i',{id:'rbar',style:'width:0'}))),
     h('div',{class:'r-body',id:'rbody'}),h('div',{class:'r-foot',id:'rfoot'}));
@@ -571,6 +670,7 @@ function renderEx(){
         h('div',{class:'ex-word'},h('div',{class:'note',style:'margin:0 0 2px'},'מילה עם האות'),
           h('div',{style:'display:flex;align-items:center;gap:12px;justify-content:center'},markLetter(it.exAr,ch),
             h('div',{style:'text-align:start'},h('div',{class:'tr',style:'font-size:17px'},it.exTr),h('div',{},it.exHe)),spkBtn(it.exAr))));
+      box.append(traceBlock(ch));
     } else {
       box.append(h('div',{class:'badge'},'מילה חדשה'),h('div',{style:'display:flex;align-items:center;gap:12px'},ar(it.ar,'word'),spkBtn(it.ar)),
         h('div',{class:'tr'},it.tr),h('div',{class:'he'},it.he));
@@ -582,6 +682,66 @@ function renderEx(){
   }
 
   if(e.type==='tiles') return renderTiles(e,body,footIn,checkBtn);
+
+  if(e.type==='type'||e.type==='typetr'){
+    const toHe=e.type==='type';
+    const target=toHe?it.he:it.tr;
+    const prompt=toHe
+      ? h('div',{class:'prompt'},ar(it.ar),spkBtn(sayOf(it)))
+      : h('div',{class:'prompt'},h('span',{class:'he-big'},it.he));
+    const inp=h('input',{type:'text','aria-label':'התשובה שלך',autocomplete:'off',autocapitalize:'off',autocorrect:'off',dir:'rtl',lang:'he',placeholder:'כתבו כאן…'});
+    inp.addEventListener('input',()=>{checkBtn.disabled=!inp.value.trim();});
+    inp.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&!checkBtn.disabled){ev.preventDefault();checkBtn.click();}});
+    body.append(h('div',{class:'q-label'},toHe?'מה זה אומר? כתבו בעברית':'איך אומרים בערבית? כתבו את התעתיק בעברית'),
+      prompt,h('div',{class:'typing'},inp));
+    if(!toHe) body.append(h('p',{class:'note'},'אפשר בלי ניקוד ובלי גרש (ח במקום ח׳).'));
+    checkBtn.onclick=()=>{inp.disabled=true;
+      const a=normHe(inp.value),b=normHe(target);
+      const ok=a===b||(a.length>=4&&lev(a,b)<=1);
+      judge(ok,e,it,ok&&a!==b?'נכון! רק שימו לב לאיות: '+target:null);};
+    footIn.append(checkBtn);
+    setTimeout(()=>inp.focus(),60);
+    return;
+  }
+
+  if(e.type==='say'){
+    const heard=h('div',{class:'heard'});
+    const mic=h('button',{class:'mic-btn','aria-label':'לחצו ודברו'}); mic.innerHTML=MIC;
+    let tries=0, rec=null, done=false;
+    const tgt=normAr(it.ar);
+    const finishSay=(ok,note)=>{if(done)return; done=true; try{rec&&rec.abort();}catch(_){}
+      mic.classList.remove('rec'); judge(ok,e,it,note);};
+    mic.onclick=()=>{
+      if(done)return;
+      const SRc=window.SpeechRecognition||window.webkitSpeechRecognition;
+      if(!SRc){finishSay(false,'זיהוי דיבור לא זמין בדפדפן הזה');return;}
+      try{rec&&rec.abort();}catch(_){}
+      rec=new SRc(); rec.lang='ar'; rec.interimResults=false; rec.maxAlternatives=3;
+      heard.textContent='מקשיבים… דברו עכשיו'; mic.classList.add('rec');
+      rec.onresult=ev=>{mic.classList.remove('rec');
+        const alts=Array.from(ev.results[0]).map(r2=>r2.transcript);
+        heard.textContent='שמענו: '+alts[0];
+        const ok=alts.some(t2=>{const a=normAr(t2);
+          return a===tgt||(a.length>3&&tgt.includes(a))||(tgt.length>3&&a.includes(tgt))||lev(a,tgt)<=Math.max(1,Math.floor(tgt.length/4));});
+        if(ok) finishSay(true);
+        else{ tries++;
+          if(tries>=2) finishSay(false,'שמעו את ההקראה ונסו שוב בפעם הבאה.');
+          else heard.textContent+=' - כמעט! נסו שוב'; }
+      };
+      rec.onerror=ev=>{mic.classList.remove('rec');
+        if(ev.error==='not-allowed'||ev.error==='service-not-allowed') finishSay(false,'לא ניתנה הרשאה למיקרופון.');
+        else heard.textContent='לא נשמע כלום. נסו שוב';};
+      rec.onend=()=>mic.classList.remove('rec');
+      try{rec.start();}catch(_){heard.textContent='לא הצלחנו להפעיל את המיקרופון';}
+    };
+    body.append(h('div',{class:'q-label'},'אמרו את המילה בערבית'),
+      h('div',{class:'prompt',style:'justify-content:center'},ar(it.ar),spkBtn(sayOf(it))),
+      h('div',{style:'text-align:center;color:var(--muted);margin-bottom:14px'},it.tr+' · '+it.he),
+      mic,heard);
+    footIn.append(h('button',{class:'btn ghost wide',onclick:()=>finishSay(false,null)},'דילוג'));
+    return;
+  }
+
 
   // multiple choice family
   let label, prompt, field, optRender;
@@ -624,11 +784,20 @@ function renderTiles(e,body,footIn,checkBtn){
   footIn.append(checkBtn);
 }
 
-function judge(ok,e,it){
+function judge(ok,e,it,note){
   const foot=document.getElementById('rfoot'); foot.className='r-foot '+(ok?'ok':'no'); foot.replaceChildren();
   const inner=h('div',{class:'in'});
   const key=R.i;
-  if(ok){ if(!R.retried.has(e))R.correct++; } else { R.wrong++; if(!R.retried.has(e)){const copy={...e};R.retried.add(copy);R.ex.push(copy);} }
+  if(ok){
+    if(!R.retried.has(e))R.correct++;
+    R.combo++; showCombo();
+    if(R.combo>0&&R.combo%5===0){ R.bonusXP+=2; sfx.combo(); toast('\u{1F525} '+R.combo+' נכונות ברצף! בונוס +2 נקודות'); }
+    else sfx.good();
+  } else {
+    R.wrong++; R.combo=0; hideCombo(); sfx.bad();
+    if(e.id)R.itemBad[e.id]=true;
+    if(!R.retried.has(e)){const copy={...e};R.retried.add(copy);R.ex.push(copy);}
+  }
   if(e.srs&&it) srsHit(it.id,ok);
   const arText = it?it.ar:e.s.toks.join(' ');
   inner.append(h('div',{class:'fb-title'},ok?['מצוין!','נכון!','יפה מאוד!','ممتاز!'][Math.floor(Math.random()*4)]:'כמעט. התשובה הנכונה:'));
@@ -637,6 +806,7 @@ function judge(ok,e,it){
       ar(arText), it?h('span',{},`${it.tr} · ${it.he}`):h('span',{},e.s.he), spkBtn(it?sayOf(it):arText)));
   }
   speak(it?sayOf(it):arText);
+  if(note) inner.append(h('div',{class:'note',style:'margin:0'},note));
   inner.append(h('button',{class:'btn wide',onclick:()=>{R.i=key+1;renderEx();}},'המשך'));
   foot.append(inner); inner.querySelector('.btn').focus();
 }
@@ -644,15 +814,22 @@ function judge(ok,e,it){
 function finish(){
   const body=document.getElementById('rbody'), foot=document.getElementById('rfoot');
   document.getElementById('rbar').style.width='100%';
-  const firstTry=R.total-[...R.retried].length; const acc=Math.round(100*Math.max(0,R.total-R.wrong)/Math.max(1,R.total));
-  const gained=(R.lesson?10:5)+R.correct;
+  hideCombo();
+  const acc=Math.round(100*Math.max(0,R.total-R.wrong)/Math.max(1,R.total));
+  const perfect=R.wrong===0&&R.total>0;
+  const gained=(R.lesson?10:5)+R.correct+R.bonusXP+(perfect&&R.lesson?5:0);
   addXp(gained);
-  if(R.lesson){ S.done[R.lesson.id]=true; const t=dayNum(); R.lesson.items.forEach(id=>{const r=S.srs[id]; if(!r||r.b<1)S.srs[id]={b:1,d:t+1};}); }
+  if(R.lesson){ S.done[R.lesson.id]=true; const t=dayNum(); R.lesson.items.forEach(id=>{const r=S.srs[id];
+    if(R.itemBad[id]) S.srs[id]={b:1,d:t};
+    else if(!r||r.b<1) S.srs[id]={b:1,d:t+1};}); }
   save();
+  confetti(); sfx.done();
   body.replaceChildren(h('div',{class:'done-screen'},h('span',{class:'star'},'✓'),
     h('h2',{style:'font-size:30px'},R.lesson?'השיעור הושלם!':'החזרה הושלמה!'),ar('بْرافو عَلَيك!','') ,
     h('div',{class:'done-stats'},h('div',{},h('b',{},'+'+gained),'נקודות'),h('div',{},h('b',{},acc+'%'),'דיוק')),
-    R.lesson?h('p',{class:'lead'},'המילים מהשיעור נכנסו לחזרה החכמה. מחר הן יחכו לך בלשונית "חזרה".'):null));
+    perfect&&R.lesson?h('p',{class:'lead',style:'color:var(--saffron);font-weight:700'},'שיעור מושלם בלי טעויות! בונוס +5 ⭐'):null,
+    R.bonusXP?h('p',{class:'note'},'כולל +'+R.bonusXP+' נקודות בונוס על רצפים'):null,
+    R.lesson?h('p',{class:'lead'},'המילים מהשיעור נכנסו לחזרה החכמה. מילים שהתקשית בהן יחזרו כבר היום, השאר מחר.'):null));
   foot.className='r-foot'; foot.replaceChildren(h('div',{class:'in'},h('button',{class:'btn wide',onclick:closeRunner},'חזרה למסלול')));
 }
 
