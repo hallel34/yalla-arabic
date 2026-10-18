@@ -537,6 +537,15 @@ function findArabicVoice(vs){return vs.find(v=>/^ar[-_](PS|JO|LB|SY)/i.test(v.la
 function pickVoice(){try{VOICE=findArabicVoice(speechSynthesis.getVoices());}catch(e){}}
 try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}catch(e){}
 const PLAYER=new Audio();
+/* recorded audio (proof): play mp3 clips instead of device TTS for these items */
+window.AUDIO={
+  'مَرْحَبا':'audio/marhaba.mp3',
+  'أَهْلا':'audio/ahlan.mp3',
+  'صَباح الخير':'audio/sabah-alkheir.mp3',
+  'صَباح النّور':'audio/sabah-annur.mp3',
+  'مَسا الخير':'audio/masa-alkheir.mp3',
+};
+
 function speakNow(text){
   const u=new SpeechSynthesisUtterance(text.replace(/[؟?،]/g,' '));
   if(VOICE){u.voice=VOICE;u.lang=VOICE.lang.replace('_','-');}else{u.lang='ar-SA';}
@@ -992,3 +1001,4 @@ setTab(TAB);
 
 </body>
 </html>
+
