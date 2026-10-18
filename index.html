@@ -1,0 +1,806 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B6E6A">
+<title>יאללה ערבית</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Noto+Naskh+Arabic:wght@500;700&family=Secular+One&display=swap">
+<style>
+html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* Layout: a single-column learning path of star tiles (khatam), units as bands; full-screen lesson runner; bottom tab bar */
+:root{
+  --bg:#EDF2EF; --surface:#FFFFFF; --ink:#132523; --muted:#5A6E6A; --line:#D3DDD8;
+  --tile:#0B6E6A; --tile-soft:#CFE8E3; --on-tile:#FFFFFF; --saffron:#C98A12; --saffron-soft:#F6E7C4;
+  --good:#2B8752; --good-soft:#DDF1E4; --bad:#BE3E37; --bad-soft:#F7DEDB; --locked:#C3CEC9;
+  --f-display:"Secular One","Assistant",system-ui,sans-serif;
+  --f-body:"Assistant",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-ar:"Noto Naskh Arabic","Geeza Pro","Arial",serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1918; --surface:#162523; --ink:#E5EEEB; --muted:#93A7A2; --line:#253936;
+  --tile:#36ADA4; --tile-soft:#143A36; --on-tile:#06201E; --saffron:#E6AE45; --saffron-soft:#3A2E14;
+  --good:#4CBF7C; --good-soft:#143322; --bad:#E5665E; --bad-soft:#3D1A18; --locked:#2C403D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1918; --surface:#162523; --ink:#E5EEEB; --muted:#93A7A2; --line:#253936;
+  --tile:#36ADA4; --tile-soft:#143A36; --on-tile:#06201E; --saffron:#E6AE45; --saffron-soft:#3A2E14;
+  --good:#4CBF7C; --good-soft:#143322; --bad:#E5665E; --bad-soft:#3D1A18; --locked:#2C403D; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--saffron);outline-offset:2px}
+.ar{font-family:var(--f-ar);direction:rtl;unicode-bidi:isolate;line-height:1.7}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 110px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance;line-height:1.2}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;gap:12px;padding-block:10px;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--f-display);font-size:22px;flex:1;min-width:0}
+.brand small{font-family:var(--f-ar);font-size:15px;color:var(--tile);margin-inline-start:6px}
+.stat{display:flex;align-items:center;gap:5px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat .dot{width:12px;height:12px;border-radius:50%;background:var(--saffron)}
+.stat.xp .dot{background:var(--tile);clip-path:polygon(50% 0,64.7% 14.6%,85.4% 14.6%,85.4% 35.3%,100% 50%,85.4% 64.7%,85.4% 85.4%,64.7% 85.4%,50% 100%,35.3% 85.4%,14.6% 85.4%,14.6% 64.7%,0 50%,14.6% 35.3%,14.6% 14.6%,35.3% 14.6%);border-radius:0}
+
+/* daily goal */
+.goal{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.goal .lbl{font-size:14px;color:var(--muted);white-space:nowrap}
+.bar{flex:1;height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--saffron);border-radius:99px;transition:width .4s}
+.goal b{font-variant-numeric:tabular-nums;font-size:14px;white-space:nowrap}
+
+/* path */
+.unit{margin-top:28px}
+.unit-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 16px;border-radius:14px;background:var(--tile);color:var(--on-tile)}
+.unit-head h2{font-size:21px}
+.unit-head .ar{font-size:20px;opacity:.9}
+.unit-head .meta{font-size:13px;opacity:.85}
+.unit.locked .unit-head{background:var(--locked);color:var(--muted)}
+.nodes{display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:18px}
+.node{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:0}
+.star{width:74px;height:74px;display:grid;place-items:center;background:var(--tile);color:var(--on-tile);
+  clip-path:polygon(50% 0,64.7% 14.6%,85.4% 14.6%,85.4% 35.3%,100% 50%,85.4% 64.7%,85.4% 85.4%,64.7% 85.4%,50% 100%,35.3% 85.4%,14.6% 85.4%,14.6% 64.7%,0 50%,14.6% 35.3%,14.6% 14.6%,35.3% 14.6%);
+  font-family:var(--f-ar);font-size:22px;transition:transform .15s}
+.node:hover .star{transform:rotate(22.5deg) scale(1.05)}
+.node.done .star{background:var(--saffron);color:#fff}
+.node.locked .star{background:var(--locked);color:var(--muted)}
+.node.next .star{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.08)}}
+.node .cap{font-size:13px;color:var(--muted);max-width:150px;text-align:center;line-height:1.3}
+.node.next .cap{color:var(--ink);font-weight:700}
+
+/* tabs */
+.tabs{position:fixed;inset:auto 0 0;z-index:20;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.tabs button{flex:1;max-width:140px;background:none;border:0;padding:8px 4px;border-radius:10px;font-weight:600;font-size:14px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabs button .ar{font-size:15px;line-height:1.2}
+.tabs button[aria-selected="true"]{color:var(--tile);background:var(--tile-soft)}
+
+.panel h2{font-size:26px;margin-top:18px}
+.lead{color:var(--muted);margin:6px 0 16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:13px 20px;font-weight:700;font-size:17px;background:var(--tile);color:var(--on-tile);box-shadow:0 3px 0 color-mix(in srgb,var(--tile) 60%,#000)}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn:disabled{background:var(--locked);color:var(--muted);box-shadow:none;cursor:default}
+.btn.ghost{background:transparent;color:var(--tile);box-shadow:none;border:2px solid var(--line)}
+.btn.wide{width:100%}
+
+/* review */
+.big-num{font-family:var(--f-display);font-size:48px;line-height:1;font-variant-numeric:tabular-nums}
+.boxes{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:16px 0}
+.boxes div{text-align:center;padding:8px 2px;border-radius:10px;background:var(--bg);font-size:12px;color:var(--muted)}
+.boxes b{display:block;font-size:18px;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* couple */
+.people{display:grid;gap:12px}
+.person{display:flex;gap:14px;align-items:center}
+.person img{width:52px;height:52px;border-radius:50%;flex:none}
+.person .info{flex:1;min-width:0}
+.person .name{font-weight:700;font-size:17px}
+.person .sub{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{font-size:13px;padding:3px 10px;border-radius:99px;background:var(--bg);font-variant-numeric:tabular-nums}
+.chip.hot{background:var(--saffron-soft);color:var(--ink)}
+.howto ol{margin:8px 0 0;padding-inline-start:20px}
+.howto li{margin-bottom:6px}
+
+/* tutor */
+.scen{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.scen button{border:2px solid var(--line);background:var(--surface);border-radius:99px;padding:7px 14px;font-weight:600}
+.scen button[aria-pressed="true"]{border-color:var(--tile);background:var(--tile-soft)}
+.chat{display:flex;flex-direction:column;gap:10px;min-height:120px}
+.msg{max-width:88%;padding:10px 14px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.me{align-self:flex-start;background:var(--tile);color:var(--on-tile);border-end-start-radius:4px}
+.msg.ai{align-self:flex-end;background:var(--surface);border:1px solid var(--line);border-end-end-radius:4px}
+.msg.ai .ar{font-size:22px;display:block}
+.msg.ai .tr{color:var(--tile);font-size:15px;display:block}
+.msg.ai .he{display:block;margin-top:2px}
+.msg.ai .tip{display:block;margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--saffron-soft);font-size:14px}
+.msg.ai .row{display:flex;gap:8px;align-items:flex-start}
+.msg.ai .row>div{flex:1;min-width:0}
+.compose{display:flex;gap:8px;margin-top:14px;position:sticky;bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+.compose textarea{flex:1;min-width:0;resize:none;border:2px solid var(--line);border-radius:14px;padding:10px 12px;font:inherit;background:var(--surface);color:var(--ink);height:48px}
+.note{font-size:13px;color:var(--muted);margin-top:8px}
+.spk{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:var(--tile-soft);color:var(--tile);display:grid;place-items:center}
+.spk svg{width:18px;height:18px}
+
+/* lesson runner */
+.runner{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+.r-top{display:flex;align-items:center;gap:12px;max-width:560px;width:100%;margin:0 auto}
+.r-top .x{background:none;border:0;font-size:26px;line-height:1;color:var(--muted);padding:4px 8px}
+.r-top .bar{height:14px}
+.r-top .bar>i{background:var(--tile)}
+.r-body{flex:1;overflow-y:auto;max-width:560px;width:100%;margin:0 auto;padding-block:22px}
+.q-label{font-family:var(--f-display);font-size:22px;margin-bottom:16px}
+.prompt{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.prompt .ar{font-size:44px;line-height:1.5}
+.prompt .he-big{font-size:28px;font-weight:700}
+.hint{background:none;border:1px dashed var(--line);border-radius:8px;padding:2px 10px;color:var(--muted);font-size:14px}
+.opts{display:grid;gap:10px}
+.opt{text-align:start;border:2px solid var(--line);border-bottom-width:4px;background:var(--surface);border-radius:14px;padding:12px 16px;font-size:18px;font-weight:600}
+.opt .ar{font-size:26px;font-weight:500}
+.opt[aria-pressed="true"]{border-color:var(--tile);background:var(--tile-soft)}
+.opt:disabled{cursor:default}
+.intro{text-align:center;display:grid;gap:10px;justify-items:center;padding-top:10px}
+.intro .badge{font-size:13px;font-weight:700;color:var(--saffron);letter-spacing:.04em}
+.intro .ar.huge{font-size:96px;line-height:1.3}
+.intro .ar.word{font-size:58px}
+.intro .tr{font-size:22px;color:var(--tile);font-weight:700}
+.intro .he{font-size:22px}
+.forms{display:flex;gap:16px;justify-content:center;margin-top:4px}
+.forms div{display:grid;gap:0;text-align:center}
+.forms .ar{font-size:34px}
+.forms small{font-size:12px;color:var(--muted)}
+.ex-word{margin-top:8px;padding:10px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.ex-word{display:grid;gap:4px}
+.ex-word .ex-ar{font-size:34px}
+.ex-word .hl{color:var(--saffron)}
+.listen-btn{width:96px;height:96px;border-radius:24px;border:0;background:var(--tile);color:var(--on-tile);display:grid;place-items:center;margin:0 auto 22px;box-shadow:0 4px 0 color-mix(in srgb,var(--tile) 60%,#000)}
+.listen-btn svg{width:44px;height:44px}
+.answer{min-height:64px;border-bottom:2px solid var(--line);display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;direction:rtl;margin-bottom:22px}
+.bank{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;direction:rtl}
+.tile{border:2px solid var(--line);border-bottom-width:4px;background:var(--surface);border-radius:12px;padding:4px 14px;font-family:var(--f-ar);font-size:22px}
+.tile.used{visibility:hidden}
+.r-foot{border-top:1px solid var(--line);margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0 calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+  padding:14px max(16px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.r-foot .in{max-width:560px;margin:0 auto;display:grid;gap:10px}
+.r-foot.ok{background:var(--good-soft);border-color:transparent}
+.r-foot.no{background:var(--bad-soft);border-color:transparent}
+.fb-title{font-family:var(--f-display);font-size:22px}
+.r-foot.ok .fb-title{color:var(--good)}
+.r-foot.no .fb-title{color:var(--bad)}
+.r-foot.ok .btn{background:var(--good);box-shadow:0 3px 0 color-mix(in srgb,var(--good) 60%,#000);color:#fff}
+.r-foot.no .btn{background:var(--bad);box-shadow:0 3px 0 color-mix(in srgb,var(--bad) 60%,#000);color:#fff}
+.fb-ans .ar{font-size:24px}
+.done-screen{text-align:center;display:grid;gap:14px;justify-items:center;padding-top:30px}
+.done-screen .star{width:120px;height:120px;font-size:40px;background:var(--saffron);color:#fff}
+.done-stats{display:flex;gap:12px;justify-content:center}
+.done-stats div{border:2px solid var(--line);border-radius:14px;padding:10px 18px;min-width:110px}
+.done-stats b{display:block;font-family:var(--f-display);font-size:28px;font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));z-index:80;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<div id="app" dir="rtl" lang="he">
+  <header class="top wrap" style="padding-block:10px;padding-bottom:10px">
+    <div class="brand">יאללה ערבית<small class="ar" lang="ar">يَلّا عَرَبي</small></div>
+    <div class="stat" title="רצף ימים"><span class="dot"></span><span id="streak">0</span></div>
+    <div class="stat xp" title="נקודות"><span class="dot"></span><span id="xp">0</span></div>
+  </header>
+  <main class="wrap" style="padding-top:0">
+    <section id="tab-path" class="panel"></section>
+    <section id="tab-review" class="panel" hidden></section>
+    <section id="tab-talk" class="panel" hidden></section>
+    <section id="tab-couple" class="panel" hidden></section>
+  </main>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="path" aria-selected="true">מסלול<span class="ar" lang="ar">الطَّريق</span></button>
+    <button role="tab" data-tab="review" aria-selected="false">חזרה<span class="ar" lang="ar">مُراجَعة</span></button>
+    <button role="tab" data-tab="talk" aria-selected="false">שיחה<span class="ar" lang="ar">حَكي</span></button>
+    <button role="tab" data-tab="couple" aria-selected="false">ביחד<span class="ar" lang="ar">مَع بَعِض</span></button>
+  </nav>
+</div>
+
+<script>
+/* ===================== CONTENT ===================== */
+const LETTER_INFO = {
+ 'ا':['אַלִף','א / אָ','גם תנועת a ארוכה','باب','בַּאבּ','דלת'],
+ 'ب':['בא','ב','','بيت','בֵּית','בית'],
+ 'ت':['תא','ת','','تُفّاح','תֻפָּאח','תפוחים'],
+ 'ث':['ת׳א','ת׳ (th)','בדיבור נשמעת לרוב כמו ת','ثَلْج','תַ׳לְג׳','שלג'],
+ 'ج':['ג׳ים','ג׳','','جَمَل','ג׳ַמַל','גמל'],
+ 'ح':['חא','ח גרונית','ח עמוקה מהגרון','حَليب','חַלִיבּ','חלב'],
+ 'خ':['ח׳א','ח׳ (כמו כ רפה)','','خَمْسة','ח׳ַמְסֶה','חמש'],
+ 'د':['דאל','ד','','دَم','דַם','דם'],
+ 'ذ':['ד׳אל','ד׳ (th של this)','בדיבור לרוב ד או ז','ذَهَب','ד׳ַהַבּ','זהב'],
+ 'ر':['רא','ר מתגלגלת','','راس','רַאס','ראש'],
+ 'ز':['זאי','ז','','زَيْت','זֵית','שמן זית'],
+ 'س':['סין','ס','','سوق','סוּא','שוק'],
+ 'ش':['שין','ש','','شَمْس','שַׁמְס','שמש'],
+ 'ص':['צאד','צ (ס עבה)','ס עמוקה ונמוכה','صَباح','צַבָּאח','בוקר'],
+ 'ض':['צ׳אד','ד עבה','ד עמוקה ונמוכה','ضَيْف','דֵ׳יף','אורח'],
+ 'ط':['טא','ט (ת עבה)','','طَريق','טַרִיא','דרך'],
+ 'ظ':['ט׳א','ז עבה','','ظُهْر','דֻ׳הֻר','צהריים'],
+ 'ع':['עין','ע גרונית','ע אמיתית מהגרון','عين','עֵין','עין'],
+ 'غ':['ע׳ין','ע׳ (ר צרפתית)','','غالي','ע׳ָאלִי','יקר'],
+ 'ف':['פא','פ רפה (f)','','فَلافِل','פַלָאפִל','פלאפל'],
+ 'ق':['קאף','ק / א','בדיבור העירוני נשמעת כמו א','قَهْوة','אַהְוֶה','קפה'],
+ 'ك':['כאף','כּ (k)','','كَلْب','כַּלְבּ','כלב'],
+ 'ل':['לאם','ל','','ليل','לֵיל','לילה'],
+ 'م':['מים','מ','','مَيّ','מַיּ','מים'],
+ 'ن':['נון','נ','','نور','נוּר','אור'],
+ 'ه':['הא','ה','','هون','הוֹן','כאן'],
+ 'و':['ואו','ו / וּ','גם תנועת u ארוכה','وَلَد','וַלַד','ילד'],
+ 'ي':['יא','י / ִי','גם תנועת i ארוכה','يَمين','יַמִין','ימין'],
+};
+const NON_CONNECT = 'اذدرزو';
+const LETTER_SAY = {'ا':'أَلِف','ب':'باء','ت':'تاء','ث':'ثاء','ج':'جيم','ح':'حاء','خ':'خاء','د':'دال','ذ':'ذال','ر':'راء','ز':'زاي','س':'سين','ش':'شين','ص':'صاد','ض':'ضاد','ط':'طاء','ظ':'ظاء','ع':'عَيْن','غ':'غَيْن','ف':'فاء','ق':'قاف','ك':'كاف','ل':'لام','م':'ميم','ن':'نون','ه':'هاء','و':'واو','ي':'ياء'};
+const sayOf = it => it.kind==='letter' ? LETTER_SAY[it.ar] : it.ar;
+
+const UNITS = [
+ {id:'abc', he:'האותיות', ar:'الحُروف', letters:true, lessons:[
+   {letters:'ا ب ت ث'},{letters:'ج ح خ'},{letters:'د ذ ر ز'},{letters:'س ش ص ض'},{letters:'ط ظ ع غ'},{letters:'ف ق ك ل'},{letters:'م ن ه و ي'}]},
+ {id:'greet', he:'ברכות ונימוס', ar:'التَّحِيّات', lessons:[
+   {t:'שלום ובוקר טוב', w:`مَرْحَبا|מַרְחַבָּא|שלום
+أَهْلا|אַהְלָא|היי, ברוך הבא
+صَباح الخير|צַבָּאח אִל-ח׳יר|בוקר טוב
+صَباح النّور|צַבָּאח אִ-נּוּר|בוקר אור (תשובה)
+مَسا الخير|מַסָא אִל-ח׳יר|ערב טוב`},
+   {t:'מה שלומך?', w:`كيفَك؟|כֵּיפַכּ?|מה שלומך? (לגבר)
+كيفِك؟|כֵּיפִכּ?|מה שלומך? (לאישה)
+مْنيح|מְנִיח|טוב (זכר)
+مْنيحة|מְנִיחַה|טובה (נקבה)
+الحَمْدُ لله|אִל-חַמְדוּ לִלָּה|תודה לאל
+تَمام|תַּמָאם|מצוין, בסדר`, s:[['صَباح الخير،','كيفَك؟','|בוקר טוב, מה שלומך?'],['مْنيح،','الحَمْدُ','لله','|טוב, תודה לאל']]},
+   {t:'תודה ולהתראות', w:`شُكْراً|שֻׁכְּרַן|תודה
+عَفْواً|עַפְוַן|על לא דבר
+مِن فَضْلَك|מִן פַדְלַכּ|בבקשה (כשמבקשים)
+مَعَ السَّلامة|מַעַ אִ-סַּלָאמֶה|להתראות
+إيوا|אַיְוַא|כן
+لأ|לַא|לא
+يَلّا|יַאללָה|יאללה, קדימה`, s:[['شُكْراً،','مَعَ','السَّلامة','|תודה, להתראות'],['إيوا،','يَلّا','|כן, יאללה']]}]},
+ {id:'fam', he:'אני והמשפחה', ar:'العيلة', lessons:[
+   {t:'אני, אתה, היא', w:`أنا|אַנַא|אני
+إنْتَ|אִנְתֶ|אתה
+إنْتِ|אִנְתִ|את
+هُوّ|הֻוֶּה|הוא
+هِيّ|הִיֶּה|היא
+إحْنا|אִחְנַא|אנחנו`},
+   {t:'נעים מאוד', w:`شو؟|שוּ?|מה?
+إسْمي|אִסְמִי|השם שלי
+إسْمَك|אִסְמַכּ|השם שלך
+وين؟|וֵין?|איפה?
+مِن|מִן|מ-, מן
+تْشَرَّفْنا|תְשַׁרַּפְנַא|נעים מאוד`, s:[['شو','إسْمَك؟','|מה שמך?'],['مِن','وين','إنْتَ؟','|מאיפה אתה?'],['إسْمي','هَلِّل،','تْشَرَّفْنا','|קוראים לי הלל, נעים מאוד']]},
+   {t:'המשפחה שלי', w:`أبوي|אַבּוּי|אבא שלי
+إمّي|אִמִּי|אמא שלי
+أَخوي|אַח׳וּי|אח שלי
+أُخْتي|אֻח׳תִי|אחות שלי
+مَرَتي|מַרַתִי|אשתי
+جوزي|ג׳וֹזִי|בעלי
+وْلادي|וְלָאדִי|הילדים שלי`, s:[['هاي','مَرَتي','|זאת אשתי'],['هاد','جوزي','|זה בעלי']]}]},
+ {id:'num', he:'מספרים', ar:'الأرْقام', lessons:[
+   {t:'1 עד 5', w:`واحَد|וָאחַד|אחת (1)
+تْنين|תְנֵין|שתיים (2)
+تَلاتة|תַלָאתֶה|שלוש (3)
+أَرْبَعة|אַרְבַּעַה|ארבע (4)
+خَمْسة|ח׳ַמְסֶה|חמש (5)`},
+   {t:'6 עד 10', w:`سِتّة|סִתֶּה|שש (6)
+سَبْعة|סַבְּעַה|שבע (7)
+تَمانْية|תַמַנְיֶה|שמונה (8)
+تِسْعة|תִסְעַה|תשע (9)
+عَشَرة|עַשַׁרַה|עשר (10)
+عِنْدي|עִנְדִי|יש לי`, s:[['عِنْدي','أَرْبَع','وْلاد','|יש לי ארבעה ילדים']]},
+   {t:'הספרות', w:`١|וָאחַד|הספרה 1
+٢|תְנֵין|הספרה 2
+٣|תַלָאתֶה|הספרה 3
+٤|אַרְבַּעַה|הספרה 4
+٥|ח׳ַמְסֶה|הספרה 5
+٦|סִתֶּה|הספרה 6
+٧|סַבְּעַה|הספרה 7
+٨|תַמַנְיֶה|הספרה 8
+٩|תִסְעַה|הספרה 9
+٠|צִפְר|הספרה 0`}]},
+ {id:'food', he:'בשוק ובמטבח', ar:'السّوق', lessons:[
+   {t:'שתייה ולחם', w:`مَيّ|מַיּ|מים
+خُبِز|ח׳ֻבִּז|לחם
+قَهْوة|אַהְוֶה|קפה
+شاي|שַׁאי|תה
+حَليب|חַלִיבּ|חלב
+سُكَّر|סֻכַּר|סוכר`},
+   {t:'ירקות ובשר', w:`بَنْدورة|בַּנְדוֹרַה|עגבנייה
+خْيار|ח׳ְיָאר|מלפפון
+تُفّاح|תֻפָּאח|תפוחים
+لَحْمة|לַחְמֶה|בשר
+جاج|ג׳ָאג׳|עוף
+رُز|רֻז|אורז`},
+   {t:'כמה זה עולה?', w:`بَدّي|בַּדִּי|אני רוצה
+في؟|פִי?|יש?
+قَدّيش؟|אַדֵּיש?|כמה?
+هاد|הָאד|זה
+غالي|ע׳ָאלִי|יקר
+رْخيص|רְח׳ִיץ|זול
+مَصاري|מַצָארִי|כסף`, s:[['بَدّي','قَهْوة','مِن','فَضْلَك','|אני רוצה קפה, בבקשה'],['قَدّيش','هاد؟','|כמה זה (עולה)?'],['في','خُبِز؟','|יש לחם?']]}]},
+ {id:'way', he:'דרכים ומקומות', ar:'الطَّريق', lessons:[
+   {t:'ימינה, שמאלה', w:`هون|הוֹן|כאן
+هْناك|הְנָאכּ|שם
+يَمين|יַמִין|ימינה
+شْمال|שְׁמָאל|שמאלה
+دُغْري|דֻע׳רִי|ישר
+قَريب|אַרִיבּ|קרוב
+بَعيد|בַּעִיד|רחוק`},
+   {t:'בית, עבודה, שוק', w:`بيت|בֵּית|בית
+شُغُل|שֻׁע׳ֻל|עבודה
+مَدْرَسة|מַדְרַסֶה|בית ספר
+سوق|סוּא|שוק
+دُكّان|דֻכָּאן|מכולת
+سَيّارة|סַיָּארַה|מכונית
+طَريق|טַרִיא|דרך, כביש`, s:[['وين','السّوق؟','|איפה השוק?'],['روح','دُغْري','وبَعْدين','يَمين','|לך ישר ואז ימינה'],['البيت','قَريب','مِن','هون','|הבית קרוב לכאן']]}]},
+ {id:'time', he:'זמן וימים', ar:'الوَقْت', lessons:[
+   {t:'היום, מחר, עכשיו', w:`اليوم|אִל-יוֹם|היום
+بُكْرة|בֻּכְּרַה|מחר
+مْبارِح|מְבָּארִח|אתמול
+هَلَّأ|הַלַּא|עכשיו
+بَعْدين|בַּעְדֵין|אחר כך
+ساعة|סָאעַה|שעה
+أُسْبوع|אֻסְבּוּע|שבוע`},
+   {t:'ימי השבוע', w:`الأحَد|אִל-אַחַד|יום ראשון
+التْنين|אִ-תְּנֵין|יום שני
+الثَّلاثا|אִ-תַּלָאתַא|יום שלישי
+الأرْبِعا|אִל-אַרְבְּעַא|יום רביעי
+الخَميس|אִל-ח׳ַמִיס|יום חמישי
+الجُمْعة|אִ-גֻ׳מְעַה|יום שישי
+السَّبِت|אִ-סַּבְּת|שבת`, s:[['بُكْرة','الجُمْعة','|מחר יום שישי'],['قَدّيش','السّاعة؟','|מה השעה?']]}]},
+ {id:'talk', he:'לדבר באמת', ar:'الحَكي', lessons:[
+   {t:'אני מדבר קצת', w:`بَحْكي|בַּחְכִּי|אני מדבר
+بْتِحْكي|בְּתִחְכִּי|אתה מדבר / היא מדברת
+عَرَبي|עַרַבִּי|ערבית
+عِبْري|עִבְרִי|עברית
+شْوَيّ|שְׁוַיּ|קצת
+كْتير|כְּתִיר|הרבה, מאוד
+كَمان|כַּמָאן|גם, עוד
+مَرّة|מַרַּה|פעם`, s:[['بَحْكي','عَرَبي','شْوَيّ','|אני מדבר קצת ערבית'],['بْتِحْكي','عِبْري؟','|אתה מדבר עברית?']]},
+   {t:'לא הבנתי', w:`بَفْهَم|בַּפְהַם|אני מבין
+مِش|מִשׁ|לא (שלילה)
+فاهِم|פָאהִם|מבין
+بَعْرِف|בַּעְרִף|אני יודע
+ما بَعْرِف|מַא בַּעְרִף|אני לא יודע
+شو يَعْني؟|שוּ יַעְנִי?|מה זה אומר?`, s:[['مِش','فاهِم،','كَمان','مَرّة','|לא הבנתי, עוד פעם'],['ما','بَعْرِف','|אני לא יודע']]},
+   {t:'מה אני עושה', w:`بَروح|בַּרוּח|אני הולך
+بوكِل|בּוֹכִּל|אני אוכל
+بَشْرَب|בַּשְׁרַבּ|אני שותה
+بَشْتْغِل|בַּשְׁתְע׳ִל|אני עובד
+بَحِبّ|בַּחִבּ|אני אוהב
+عَ|עַ|ל-, אל`, s:[['بُكْرة','بَروح','عَ','الشُّغُل','|מחר אני הולך לעבודה'],['بَحِبّ','القَهْوة','|אני אוהב קפה'],['بَشْرَب','شاي','مَع','حَليب','|אני שותה תה עם חלב']]}]},
+];
+
+const ITEMS = {}; const LESSONS = [];
+UNITS.forEach((u,ui)=>{
+  u.lessons.forEach((l,li)=>{
+    const L = {id:u.id+'-'+li, unit:u, ui, li, items:[], sents:[]};
+    if(u.letters){
+      const chars = l.letters.split(' ');
+      L.title = chars.join(' ');
+      chars.forEach(ch=>{const [name,sound,note,exAr,exTr,exHe]=LETTER_INFO[ch];
+        const id='l:'+ch; ITEMS[id]={id,kind:'letter',ar:ch,tr:name,he:sound,note,exAr,exTr,exHe,unit:u.id}; L.items.push(id);});
+    } else {
+      L.title = l.t;
+      l.w.split('\n').forEach(line=>{const [ar,tr,he]=line.split('|'); const id='w:'+ar;
+        if(!ITEMS[id]) ITEMS[id]={id,kind:/^[٠-٩]$/.test(ar)?'digit':'word',ar,tr,he,unit:u.id}; L.items.push(id);});
+      (l.s||[]).forEach(arr=>{const he=arr[arr.length-1].slice(1); L.sents.push({toks:arr.slice(0,-1),he});});
+    }
+    LESSONS.push(L);
+  });
+});
+
+/* ===================== STATE ===================== */
+const KEY='yalla-arabic-v1';
+const blank=()=>({xp:0,streak:0,lastDay:null,done:{},srs:{},days:{}});
+let S = blank();
+try{ const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) S=Object.assign(blank(),s);}catch(e){}
+let DB=null, USER=null, UID=null, PEOPLE=[];
+
+const pad=n=>String(n).padStart(2,'0');
+const dayKey=(d=new Date())=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const dayNum=(k=dayKey())=>{const [y,m,d]=k.split('-').map(Number);return Math.round(Date.UTC(y,m-1,d)/864e5);};
+const DAILY_GOAL=30, WEEK_GOAL=400, GAPS=[0,1,3,7,14,30,60];
+function weekXp(st){const t=new Date();const start=new Date(t.getFullYear(),t.getMonth(),t.getDate()-t.getDay());
+  let s=0;for(const [k,v] of Object.entries(st.days||{})){const [y,m,d]=k.split('-').map(Number);if(new Date(y,m-1,d)>=start)s+=v;}return s;}
+function liveStreak(st){ if(!st.lastDay) return 0; const gap=dayNum()-dayNum(st.lastDay); return gap<=1?st.streak:0; }
+function learnedCount(st){return Object.values(st.srs||{}).filter(v=>v.b>=1).length;}
+
+async function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+  if(DB&&UID){ try{ await DB.doc('progress/'+UID).set(JSON.parse(JSON.stringify(S))); }
+    catch(e){ console.warn(e); toast('לא הצלחתי לשמור בענן. ההתקדמות נשמרה במכשיר הזה.'); } }
+}
+function addXp(n){
+  const today=dayKey();
+  if(S.lastDay!==today){ S.streak = (S.lastDay && dayNum(today)-dayNum(S.lastDay)===1) ? S.streak+1 : 1; S.lastDay=today; }
+  S.xp+=n; S.days[today]=(S.days[today]||0)+n;
+  const keep=Object.keys(S.days).sort().slice(-21); S.days=Object.fromEntries(keep.map(k=>[k,S.days[k]]));
+}
+function srsHit(id,ok){
+  const r=S.srs[id]||{b:0,d:0}; const today=dayNum();
+  if(ok){ r.b=Math.min(r.b+1,6); r.d=today+GAPS[r.b]; } else { r.b=Math.max(1,r.b-2); r.d=today; }
+  S.srs[id]=r;
+}
+function dueIds(){const t=dayNum();return Object.entries(S.srs).filter(([id,r])=>r.d<=t&&ITEMS[id]).map(([id])=>id);}
+
+/* ===================== HELPERS ===================== */
+function h(tag,attrs,...kids){const el=document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs||{})){ if(v==null||v===false)continue;
+    if(k==='class')el.className=v; else if(k.startsWith('on'))el.addEventListener(k.slice(2),v); else el.setAttribute(k,v===true?'':v);}
+  for(const c of kids.flat()){ if(c==null||c===false)continue; el.append(c.nodeType?c:document.createTextNode(String(c))); }
+  return el;}
+function markLetter(word,ch){const i=word.indexOf(ch);const el=h('span',{class:'ar ex-ar',lang:'ar',dir:'rtl'});
+  if(i<0){el.textContent=word;return el;}
+  let j=i+1; while(j<word.length&&/[\u064B-\u0652]/.test(word[j]))j++;
+  el.append(word.slice(0,i),h('span',{class:'hl'},word.slice(i,j)),word.slice(j));return el;}
+const ar=(t,cls='')=>h('span',{class:'ar '+cls,lang:'ar',dir:'rtl'},t);
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const SPK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+function spkBtn(text,label='השמע'){const b=h('button',{class:'spk','aria-label':label,onclick:e=>{e.stopPropagation();speak(text);}});b.innerHTML=SPK;return b;}
+let toastT; function toast(msg){document.querySelector('.toast')?.remove();const t=h('div',{class:'toast',role:'status'},msg);document.body.append(t);clearTimeout(toastT);toastT=setTimeout(()=>t.remove(),3200);}
+
+/* speech */
+let VOICE=null;
+function pickVoice(){try{const vs=speechSynthesis.getVoices();VOICE=vs.find(v=>/^ar[-_](PS|JO|LB|SY)/i.test(v.lang))||vs.find(v=>/^ar/i.test(v.lang))||null;}catch(e){}}
+try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}catch(e){}
+const PLAYER=new Audio();
+function speak(text){
+  const clip=window.AUDIO&&window.AUDIO[text];
+  if(clip){ try{ try{speechSynthesis.cancel();}catch(e){} PLAYER.pause(); PLAYER.src=clip; PLAYER.currentTime=0;
+    PLAYER.play().catch(()=>{}); }catch(e){} return; }
+  try{ if(!('speechSynthesis' in window)) throw 0;
+    if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel(); speechSynthesis.resume(); const u=new SpeechSynthesisUtterance(text.replace(/[؟?،]/g,' '));
+    u.lang=VOICE?VOICE.lang:'ar-SA'; if(VOICE)u.voice=VOICE; u.rate=.8; speechSynthesis.speak(u);
+    if(!VOICE) setTimeout(()=>{pickVoice(); if(!VOICE) toast('לא נמצא קול ערבי במכשיר. אפשר להוסיף קול "ערבית" בהגדרות ההקראה של הטלפון.');},400);
+  }catch(e){ toast('באפליקציה של Claude אין הקראה. כדי לשמוע, פתחו את הקישור בדפדפן כרום.'); }
+}
+
+/* ===================== RENDER: TOP + PATH ===================== */
+function renderTop(){document.getElementById('xp').textContent=S.xp;document.getElementById('streak').textContent=liveStreak(S);}
+function lessonState(i){const L=LESSONS[i]; if(S.done[L.id])return 'done';
+  const firstOpen=LESSONS.findIndex(x=>!S.done[x.id]); return i===firstOpen?'next':'locked';}
+
+function renderPath(){
+  const root=document.getElementById('tab-path'); root.replaceChildren();
+  const today=S.days[dayKey()]||0;
+  root.append(h('div',{class:'goal'},h('span',{class:'lbl'},'יעד יומי'),
+    h('div',{class:'bar'},h('i',{style:`width:${Math.min(100,today/DAILY_GOAL*100)}%`})),h('b',{},`${today}/${DAILY_GOAL}`)));
+  UNITS.forEach((u,ui)=>{
+    const ls=LESSONS.filter(l=>l.ui===ui); const nDone=ls.filter(l=>S.done[l.id]).length;
+    const unlocked=ls.some((l)=>lessonState(LESSONS.indexOf(l))!=='locked');
+    const sec=h('div',{class:'unit'+(unlocked?'':' locked')},
+      h('div',{class:'unit-head'},h('div',{},h('h2',{},u.he),h('div',{class:'meta'},`יחידה ${ui+1} · ${nDone}/${ls.length} שיעורים`)),ar(u.ar)));
+    const nodes=h('div',{class:'nodes'});
+    ls.forEach((L,k)=>{const idx=LESSONS.indexOf(L), st=lessonState(idx);
+      const glyph = u.letters ? L.title.split(' ')[0] : String(k+1).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
+      const x=[0,-60,-90,-60,0,60,90,60][k%8];
+      const b=h('button',{class:'node '+st,style:`transform:translateX(${x}px)`,'aria-label':`${u.he}: ${L.title}${st==='locked'?' (נעול)':''}`,
+        onclick:()=>{ if(st==='locked'){toast('קודם צריך לסיים את השיעור הקודם');return;} startLesson(L); }},
+        h('span',{class:'star'},glyph), h('span',{class:'cap'+(u.letters?' ar':'')},L.title));
+      nodes.append(b);});
+    sec.append(nodes); root.append(sec);
+  });
+  if(!('speechSynthesis' in window)) root.prepend(h('div',{class:'card',style:'margin-top:14px;background:var(--saffron-soft);border-color:transparent'},
+    h('b',{},'אין כאן קול. '),'האפליקציה של Claude בטלפון לא משמיעה הקראה. כדי לשמוע ערבית, פתחו את הקישור בדפדפן כרום (שיתוף ← העתקת קישור). ההתקדמות שלכם נשמרת בשני המקומות.'));
+  if(!S.done[LESSONS[0].id]) root.prepend(h('p',{class:'lead',style:'margin-top:14px'},'מתחילים מהאותיות. כל שיעור לוקח כ-5 דקות, ואחרי כל שיעור המילים נכנסות לחזרה החכמה כדי שלא יישכחו.'));
+  renderTop();
+}
+
+/* ===================== REVIEW TAB ===================== */
+function renderReview(){
+  const root=document.getElementById('tab-review'); root.replaceChildren();
+  const due=dueIds(); const counts=[1,2,3,4,5,6].map(b=>Object.values(S.srs).filter(r=>r.b===b).length);
+  root.append(h('h2',{},'חזרה חכמה'),
+    h('p',{class:'lead'},'כל מילה חוזרת אליך בדיוק כשהיא מתחילה להישכח: אחרי יום, 3 ימים, שבוע, שבועיים, חודש. זה מה שהופך מילים שלמדת למילים שאתה יודע.'));
+  const card=h('div',{class:'card'},
+    h('div',{style:'display:flex;align-items:end;gap:10px'},h('span',{class:'big-num'},due.length),h('span',{style:'color:var(--muted);padding-bottom:4px'},'מילים מחכות לחזרה היום')),
+    h('div',{class:'boxes'},counts.map((c,i)=>h('div',{},h('b',{},c),['חדש','יום','3 ימים','שבוע','שבועיים','חודש+'][i]))),
+    h('button',{class:'btn wide',disabled:Object.keys(S.srs).length<4,onclick:()=>startReview()}, due.length?`התחל חזרה (${Math.min(due.length,15)})`:'חזרה נוספת על מילים חלשות'));
+  root.append(card);
+  if(Object.keys(S.srs).length<4) root.append(h('p',{class:'note'},'החזרה נפתחת אחרי השיעור הראשון.'));
+  renderTop();
+}
+
+/* ===================== LESSON RUNNER ===================== */
+let R=null;
+function hasVoice(){return !!VOICE;}
+function buildLesson(L){
+  const ex=[]; const ids=L.items.slice();
+  for(let i=0;i<ids.length;i+=3){const c=ids.slice(i,i+3); c.forEach(id=>ex.push({type:'intro',id})); shuffle(c.slice()).forEach(id=>ex.push({type:'mc',id}));}
+  shuffle(ids.slice()).forEach(id=>ex.push({type:(ITEMS[id].kind==='word'&&hasVoice()&&Math.random()<.5)?'listen':'rev',id}));
+  L.sents.forEach(s=>ex.push({type:'tiles',s}));
+  return ex;
+}
+function buildReview(){
+  let ids=dueIds(); if(ids.length<6){ids=Object.entries(S.srs).sort((a,b)=>a[1].b-b[1].b||a[1].d-b[1].d).map(([id])=>id).filter(id=>ITEMS[id]);}
+  ids=shuffle(ids).slice(0,15);
+  const ex=ids.map(id=>({type:ITEMS[id].kind!=='word'?(Math.random()<.5?'mc':'rev'):(['mc','rev',hasVoice()?'listen':'mc'][Math.floor(Math.random()*3)]),id,srs:true}));
+  const sents=LESSONS.filter(L=>S.done[L.id]).flatMap(L=>L.sents); shuffle(sents).slice(0,3).forEach(s=>ex.splice(Math.floor(Math.random()*ex.length),0,{type:'tiles',s}));
+  return ex;
+}
+function startLesson(L){openRunner({lesson:L,ex:buildLesson(L)});}
+function startReview(){openRunner({lesson:null,ex:buildReview()});}
+
+function openRunner(cfg){
+  R={...cfg,i:0,total:cfg.ex.length,correct:0,wrong:0,retried:new Set()};
+  const el=h('div',{class:'runner',dir:'rtl',role:'dialog','aria-modal':'true'});
+  el.append(h('div',{class:'r-top'},h('button',{class:'x','aria-label':'סגור',onclick:closeRunner},'×'),h('div',{class:'bar'},h('i',{id:'rbar',style:'width:0'}))),
+    h('div',{class:'r-body',id:'rbody'}),h('div',{class:'r-foot',id:'rfoot'}));
+  document.body.append(el); R.el=el; document.body.style.overflow='hidden'; renderEx();
+}
+function closeRunner(){try{speechSynthesis.cancel();}catch(e){} R?.el.remove();R=null;document.body.style.overflow='';renderAll();}
+
+function optionsFor(id,field){
+  const it=ITEMS[id]; const kindPool=Object.values(ITEMS).filter(x=>x.kind===it.kind&&x.id!==id&&x[field]!==it[field]);
+  const same=shuffle(kindPool.filter(x=>x.unit===it.unit)), other=shuffle(kindPool.filter(x=>x.unit!==it.unit));
+  const picks=[]; for(const x of [...same,...other]){ if(picks.length>=3)break; if(!picks.some(p=>p[field]===x[field]))picks.push(x);}
+  return shuffle([it,...picks]);
+}
+
+function renderEx(){
+  const body=document.getElementById('rbody'), foot=document.getElementById('rfoot');
+  document.getElementById('rbar').style.width=(R.i/R.ex.length*100)+'%';
+  body.replaceChildren(); foot.className='r-foot'; foot.replaceChildren();
+  if(R.i>=R.ex.length) return finish();
+  const e=R.ex[R.i]; const it=e.id?ITEMS[e.id]:null;
+  const footIn=h('div',{class:'in'}); foot.append(footIn);
+  const checkBtn=h('button',{class:'btn wide',disabled:true},'בדיקה');
+
+  if(e.type==='intro'){
+    const box=h('div',{class:'intro'});
+    if(it.kind==='letter'){
+      const ch=it.ar, nc=NON_CONNECT.includes(ch);
+      speak(sayOf(it));
+      box.append(h('div',{class:'badge'},'אות חדשה'),h('div',{style:'display:flex;align-items:center;gap:14px'},ar(ch,'huge'),spkBtn(sayOf(it),'השמע את שם האות')),h('div',{class:'tr'},it.tr),h('div',{class:'he'},'הצליל: '+it.he),
+        it.note?h('div',{class:'note',style:'font-size:15px'},it.note):null,
+        h('div',{class:'forms'},
+          h('div',{},ar(ch),h('small',{},'לבד')),
+          !nc?h('div',{},ar(ch+'ـ'),h('small',{},'בהתחלה')):null,
+          !nc?h('div',{},ar('ـ'+ch+'ـ'),h('small',{},'באמצע')):null,
+          h('div',{},ar('ـ'+ch),h('small',{},'בסוף'))),
+        nc?h('div',{class:'note'},'האות הזאת לא מתחברת לאות שאחריה (משמאל).'):null,
+        h('div',{class:'ex-word'},h('div',{class:'note',style:'margin:0 0 2px'},'מילה עם האות'),
+          h('div',{style:'display:flex;align-items:center;gap:12px;justify-content:center'},markLetter(it.exAr,ch),
+            h('div',{style:'text-align:start'},h('div',{class:'tr',style:'font-size:17px'},it.exTr),h('div',{},it.exHe)),spkBtn(it.exAr))));
+    } else {
+      box.append(h('div',{class:'badge'},'מילה חדשה'),h('div',{style:'display:flex;align-items:center;gap:12px'},ar(it.ar,'word'),spkBtn(it.ar)),
+        h('div',{class:'tr'},it.tr),h('div',{class:'he'},it.he));
+      speak(it.ar);
+    }
+    body.append(box);
+    footIn.append(h('button',{class:'btn wide',onclick:()=>{R.i++;renderEx();}},'הבנתי, הלאה'));
+    return;
+  }
+
+  if(e.type==='tiles') return renderTiles(e,body,footIn,checkBtn);
+
+  // multiple choice family
+  let label, prompt, field, optRender;
+  if(e.type==='mc'){
+    label = it.kind==='letter'?'איזה צליל עושה האות?':'מה זה אומר?';
+    field='he';
+    const hintBox=h('span',{});
+    prompt=h('div',{class:'prompt'},ar(it.ar),spkBtn(sayOf(it)),
+      it.kind==='word'?h('button',{class:'hint',onclick:ev=>{ev.target.replaceWith(h('span',{class:'tr',style:'color:var(--tile);font-weight:700'},it.tr));}},'הצג הגייה'):null, hintBox);
+    optRender=x=>x.he;
+  } else if(e.type==='rev'){
+    label = it.kind==='letter'?'איזו אות עושה את הצליל הזה?':'איך אומרים בערבית?';
+    field='ar'; prompt=h('div',{class:'prompt'},h('span',{class:'he-big'},it.he));
+    optRender=x=>ar(x.ar);
+  } else { // listen
+    label='מה שמעת?'; field='ar';
+    const lb=h('button',{class:'listen-btn','aria-label':'השמע שוב',onclick:()=>speak(it.ar)}); lb.innerHTML=SPK;
+    prompt=h('div',{},lb); speak(it.ar);
+    optRender=x=>ar(x.ar);
+  }
+  let chosen=null; const opts=h('div',{class:'opts'});
+  optionsFor(e.id,field).forEach(x=>{
+    const b=h('button',{class:'opt','aria-pressed':'false',onclick:()=>{chosen=x;opts.querySelectorAll('.opt').forEach(o=>o.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');checkBtn.disabled=false;}},optRender(x));
+    opts.append(b);});
+  body.append(h('div',{class:'q-label'},label),prompt,opts);
+  checkBtn.onclick=()=>{opts.querySelectorAll('.opt').forEach(o=>o.disabled=true); judge(chosen.id===it.id,e,it);};
+  footIn.append(checkBtn);
+}
+
+function renderTiles(e,body,footIn,checkBtn){
+  const all=Object.values(ITEMS).filter(x=>x.kind==='word').map(x=>x.ar).filter(a=>!e.s.toks.includes(a));
+  const toks=shuffle([...e.s.toks,...shuffle(all).slice(0,2)].map((t,i)=>({t,i})));
+  const answer=h('div',{class:'answer','aria-label':'התשובה שלך'}), bank=h('div',{class:'bank'});
+  const picked=[];
+  const sync=()=>{answer.replaceChildren(...picked.map(p=>h('button',{class:'tile',lang:'ar',onclick:()=>{picked.splice(picked.indexOf(p),1);p.btn.classList.remove('used');sync();}},p.t)));checkBtn.disabled=!picked.length;};
+  toks.forEach(p=>{p.btn=h('button',{class:'tile',lang:'ar',onclick:()=>{if(p.btn.classList.contains('used'))return;p.btn.classList.add('used');picked.push(p);sync();}},p.t);bank.append(p.btn);});
+  body.append(h('div',{class:'q-label'},'תרגמו לערבית'),h('div',{class:'prompt'},h('span',{class:'he-big'},e.s.he)),answer,bank);
+  checkBtn.onclick=()=>{const ok=picked.map(p=>p.t).join(' ')===e.s.toks.join(' ');
+    answer.querySelectorAll('button').forEach(b=>b.disabled=true);bank.querySelectorAll('button').forEach(b=>b.disabled=true);judge(ok,e,null);};
+  footIn.append(checkBtn);
+}
+
+function judge(ok,e,it){
+  const foot=document.getElementById('rfoot'); foot.className='r-foot '+(ok?'ok':'no'); foot.replaceChildren();
+  const inner=h('div',{class:'in'});
+  const key=R.i;
+  if(ok){ if(!R.retried.has(e))R.correct++; } else { R.wrong++; if(!R.retried.has(e)){const copy={...e};R.retried.add(copy);R.ex.push(copy);} }
+  if(e.srs&&it) srsHit(it.id,ok);
+  const arText = it?it.ar:e.s.toks.join(' ');
+  inner.append(h('div',{class:'fb-title'},ok?['מצוין!','נכון!','יפה מאוד!','ممتاز!'][Math.floor(Math.random()*4)]:'כמעט. התשובה הנכונה:'));
+  if(!ok||it?.kind==='word'||!it){
+    inner.append(h('div',{class:'fb-ans',style:'display:flex;align-items:center;gap:10px;flex-wrap:wrap'},
+      ar(arText), it?h('span',{},`${it.tr} · ${it.he}`):h('span',{},e.s.he), spkBtn(it?sayOf(it):arText)));
+  }
+  speak(it?sayOf(it):arText);
+  inner.append(h('button',{class:'btn wide',onclick:()=>{R.i=key+1;renderEx();}},'המשך'));
+  foot.append(inner); inner.querySelector('.btn').focus();
+}
+
+function finish(){
+  const body=document.getElementById('rbody'), foot=document.getElementById('rfoot');
+  document.getElementById('rbar').style.width='100%';
+  const firstTry=R.total-[...R.retried].length; const acc=Math.round(100*Math.max(0,R.total-R.wrong)/Math.max(1,R.total));
+  const gained=(R.lesson?10:5)+R.correct;
+  addXp(gained);
+  if(R.lesson){ S.done[R.lesson.id]=true; const t=dayNum(); R.lesson.items.forEach(id=>{const r=S.srs[id]; if(!r||r.b<1)S.srs[id]={b:1,d:t+1};}); }
+  save();
+  body.replaceChildren(h('div',{class:'done-screen'},h('span',{class:'star'},'✓'),
+    h('h2',{style:'font-size:30px'},R.lesson?'השיעור הושלם!':'החזרה הושלמה!'),ar('بْرافو عَلَيك!','') ,
+    h('div',{class:'done-stats'},h('div',{},h('b',{},'+'+gained),'נקודות'),h('div',{},h('b',{},acc+'%'),'דיוק')),
+    R.lesson?h('p',{class:'lead'},'המילים מהשיעור נכנסו לחזרה החכמה. מחר הן יחכו לך בלשונית "חזרה".'):null));
+  foot.className='r-foot'; foot.replaceChildren(h('div',{class:'in'},h('button',{class:'btn wide',onclick:closeRunner},'חזרה למסלול')));
+}
+
+/* ===================== TALK TAB (Claude as conversation partner) ===================== */
+const SCENARIOS=[
+ {id:'meet',he:'היכרות עם שכן',en:'You are Abu Rami, a friendly neighbor from Qalqilya meeting the learner for the first time. Ask names, where they live, family.'},
+ {id:'market',he:'בשוק הירקות',en:'You are a vegetable seller at a market stall. The learner wants to buy vegetables. Talk prices in shekels and quantities.'},
+ {id:'cafe',he:'בבית קפה',en:'You are a waiter at a small café. Take the learner\'s order of coffee, tea and food.'},
+ {id:'garage',he:'במוסך',en:'You are Khaled, a car mechanic. The learner brought their car in. Ask what the problem is and when they need it back.'},
+ {id:'way',he:'לשאול דרך',en:'You are a passer-by in a village. The learner asks for directions. Use right, left, straight, near, far.'},
+ {id:'free',he:'שיחה חופשית',en:'You are a friendly Palestinian friend chatting casually about the day, family and plans.'},
+];
+let TALK={scen:SCENARIOS[0],turns:[],busy:false,ctl:null,sample:undefined,off:false};
+function knownWords(){return Object.keys(S.srs).filter(id=>id.startsWith('w:')).map(id=>ITEMS[id]?.ar).filter(Boolean);}
+function rules(){
+  const kw=knownWords();
+  return `You are a patient conversation partner helping a Hebrew-speaking Israeli adult beginner learn SPOKEN Palestinian Arabic (Levantine colloquial, not MSA).
+Scenario: ${TALK.scen.en}
+Words the learner already knows: ${kw.length?kw.join('، '):'(almost none yet — use very simple words)'}.
+Rules:
+- Stay in character. Reply with 1-2 SHORT sentences of everyday Palestinian colloquial Arabic, mostly known words, with at most 2 new words.
+- Always write the Arabic in Arabic script WITH full vowel marks (harakat).
+- The learner may write in Arabic script, in Hebrew-letter transliteration, or in plain Hebrew. If they wrote Hebrew, put in TIP how to say what they meant in Arabic.
+- If the learner made a mistake, gently correct it in Hebrew in TIP. Otherwise use TIP for one short note in Hebrew on a new word you used, or leave it empty.
+- Always end with a simple question so the learner has something to answer.
+Reply in EXACTLY this format, four lines, nothing else:
+AR: <your reply in Arabic script with harakat>
+TR: <the same in Hebrew-letter transliteration; use ח׳ for خ, ע׳ for غ, ג׳ for ج, א for ق>
+HE: <Hebrew translation>
+TIP: <short Hebrew tip, or empty>`;
+}
+function parseReply(t){const g=k=>{const m=t.match(new RegExp('^\\s*'+k+'\\s*:\\s*(.*)$','mi'));return m?m[1].trim():'';};
+  const r={ar:g('AR'),tr:g('TR'),he:g('HE'),tip:g('TIP')}; return r.ar?r:null;}
+function aiBubble(text,final){
+  const p=final?parseReply(text):null;
+  if(!p) return h('div',{class:'msg ai'},final?text:h('span',{style:'color:var(--muted)'},text));
+  return h('div',{class:'msg ai'},h('div',{class:'row'},h('div',{},ar(p.ar),h('span',{class:'tr'},p.tr),h('span',{class:'he'},p.he)),spkBtn(p.ar)),p.tip?h('span',{class:'tip'},p.tip):null);
+}
+function renderTalk(){
+  const root=document.getElementById('tab-talk'); root.replaceChildren();
+  root.append(h('h2',{},'לדבר עם Claude'),h('p',{class:'lead'},'בוחרים מצב מהחיים ומנהלים שיחה אמיתית בערבית מדוברת. אפשר לכתוב בערבית, בתעתיק עברי או סתם בעברית, ו-Claude יתקן ויראה איך אומרים.'));
+  if(TALK.off){root.append(h('div',{class:'card'},'השיחה עם Claude לא זמינה בתצוגה הזאת. אפשר להמשיך ללמוד במסלול ובחזרה.'));return;}
+  const sc=h('div',{class:'scen'});
+  SCENARIOS.forEach(s=>sc.append(h('button',{'aria-pressed':String(s===TALK.scen),onclick:()=>{if(TALK.busy)return;TALK.scen=s;TALK.turns=[];renderTalk();}},s.he)));
+  const chat=h('div',{class:'chat',id:'chat'});
+  TALK.turns.forEach(t=>{ if(t.hide)return; chat.append(t.role==='user'?h('div',{class:'msg me'},t.content):aiBubble(t.content,true)); });
+  root.append(sc,chat);
+  if(!TALK.turns.length){
+    root.append(h('div',{style:'margin-top:8px'},h('button',{class:'btn wide',onclick:()=>talkSend(null)},'התחל שיחה: '+TALK.scen.he)));
+  } else {
+    const ta=h('textarea',{id:'talk-in',rows:'1',placeholder:'כתבו תשובה…',dir:'auto','aria-label':'התשובה שלך'});
+    ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+    const send=()=>{const v=ta.value.trim(); if(!v||TALK.busy)return; ta.value=''; talkSend(v);};
+    root.append(h('div',{class:'compose'},ta,h('button',{class:'btn',onclick:send,disabled:TALK.busy},'שלח')),
+      h('div',{style:'display:flex;gap:8px;margin-top:10px'},
+        h('button',{class:'btn ghost',onclick:()=>talkSend('לא הבנתי. תגיד את זה יותר פשוט?')},'לא הבנתי'),
+        h('button',{class:'btn ghost',onclick:()=>{TALK.turns=[];renderTalk();}},'שיחה חדשה')));
+  }
+  root.append(h('p',{class:'note'},'כל הודעה כאן משתמשת במכסת השימוש שלך ב-Claude.'));
+}
+async function talkSend(text){
+  if(TALK.sample===undefined){ TALK.sample = window.claude?.use ? await window.claude.use('sample') : null; }
+  const sample=TALK.sample; if(!sample){TALK.off=true;renderTalk();return;}
+  if(!TALK.turns.length) TALK.turns.push({role:'user',content:rules()+'\n\nStart the conversation now with your opening line.',hide:true});
+  else TALK.turns.push({role:'user',content:text});
+  TALK.busy=true; renderTalk();
+  const chat=document.getElementById('chat'); let bubble=aiBubble('חושב…',false); chat.append(bubble); bubble.scrollIntoView({block:'nearest'});
+  TALK.ctl=new AbortController();
+  const turns=[TALK.turns[0],...TALK.turns.slice(1).slice(-16)].map(t=>({role:t.role,content:t.content}));
+  try{
+    const {text:out}=await sample(turns,
+      {cache:false,modelTier:'quick',signal:TALK.ctl.signal,onText:({text})=>{const nb=aiBubble(text,false);bubble.replaceWith(nb);bubble=nb;}});
+    TALK.turns.push({role:'assistant',content:out});
+    const p=parseReply(out); if(p)setTimeout(()=>speak(p.ar),100);
+  }catch(e){
+    if(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code)){TALK.off=true;}
+    else if(e.code==='rate_limited') toast('יותר מדי הודעות כרגע. נסו שוב בעוד כמה דקות.');
+    else if(e.code!=='cancelled') toast('השיחה נקטעה. נסו לשלוח שוב.');
+    if(TALK.turns.at(-1)?.role==='user'&&TALK.turns.length>1&&e.code!=='cancelled'){} // keep user turn for retry
+    if(TALK.turns.length===1)TALK.turns=[];
+  }
+  TALK.busy=false; renderTalk(); document.getElementById('talk-in')?.focus();
+}
+
+/* ===================== COUPLE TAB ===================== */
+async function renderCouple(){
+  const root=document.getElementById('tab-couple'); root.replaceChildren();
+  root.append(h('h2',{},'לומדים ביחד'),h('p',{class:'lead'},'ההתקדמות של שניכם במקום אחד, עם יעד שבועי משותף. הכי טוב: 10 דקות כל ערב, ופעם בשבוע לנהל ביניכם שיחה קצרה רק בערבית.'));
+  const people = PEOPLE.length ? PEOPLE : [{id:UID||'me',data:S}];
+  const ids=people.map(p=>p.id);
+  let profiles={}; try{ if(USER) profiles=await USER.profiles(ids);}catch(e){}
+  const totalWeek=people.reduce((s,p)=>s+weekXp(p.data),0);
+  root.append(h('div',{class:'card',style:'margin-bottom:12px'},
+    h('div',{style:'display:flex;justify-content:space-between;gap:10px;font-weight:700'},h('span',{},'יעד משותף השבוע'),h('span',{style:'font-variant-numeric:tabular-nums'},`${totalWeek}/${WEEK_GOAL}`)),
+    h('div',{class:'bar',style:'margin-top:10px;height:14px'},h('i',{style:`width:${Math.min(100,totalWeek/WEEK_GOAL*100)}%`})),
+    h('div',{class:'note'},totalWeek>=WEEK_GOAL?'הגעתם ליעד! מגיע לכם ערב חומוס.':'כל נקודה של כל אחד מכם נספרת ליעד.')));
+  const list=h('div',{class:'people'});
+  people.sort((a,b)=>weekXp(b.data)-weekXp(a.data)).forEach(p=>{
+    const pr=profiles[p.id]; const me=p.id===UID||p.id==='me'; const d=p.data;
+    const today=(d.days||{})[dayKey()]||0;
+    list.append(h('div',{class:'card person'},
+      pr?h('img',{src:pr.avatarUrl,alt:''}):null,
+      h('div',{class:'info'},h('div',{class:'name'},(pr?.name||(me?'את/ה':'שותף/ה'))+(me?' (את/ה)':'')),
+        h('div',{class:'sub'},`${Object.keys(d.done||{}).length} שיעורים · ${learnedCount(d)} מילים ואותיות`),
+        h('div',{class:'chips'},h('span',{class:'chip hot'},`רצף ${liveStreak(d)} ימים`),h('span',{class:'chip'},`היום ${today}/${DAILY_GOAL}`),h('span',{class:'chip'},`השבוע ${weekXp(d)}`)))));
+  });
+  root.append(list);
+  if(people.length<2){
+    root.append(h('div',{class:'card howto',style:'margin-top:12px'},h('b',{},'איך מצרפים את בת הזוג'),
+      !window.claude?h('p',{class:'note'},'המעקב הזוגי והשיחה עם Claude עובדים בגרסה שנפתחת מתוך Claude. כאן ההתקדמות נשמרת רק בדפדפן הזה.'):null,
+      h('ol',{},h('li',{},'לוחצים על כפתור השיתוף בראש הדף.'),h('li',{},'מזמינים אותה לפי כתובת המייל שלה, בהרשאת עריכה (Editor). צריך שיהיה לה חשבון Claude.'),
+        h('li',{},'היא פותחת את הקישור, ומיד מופיעה כאן לידך עם ההתקדמות שלה. לכל אחד מסלול נפרד.')),
+      !DB?h('p',{class:'note'},'כרגע ההתקדמות נשמרת רק במכשיר הזה, כי השמירה בענן לא זמינה בתצוגה הזאת.'):null));
+  }
+}
+
+/* ===================== TABS + BOOT ===================== */
+let TAB='path';
+try{TAB=localStorage.getItem(KEY+'-tab')||'path';}catch(e){}
+function setTab(t){TAB=t;try{localStorage.setItem(KEY+'-tab',t);}catch(e){}
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===t)));
+  ['path','review','talk','couple'].forEach(x=>document.getElementById('tab-'+x).hidden=x!==t);
+  ({path:renderPath,review:renderReview,talk:renderTalk,couple:renderCouple})[t](); window.scrollTo(0,0);}
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+function renderAll(){renderTop();({path:renderPath,review:renderReview,talk:renderTalk,couple:renderCouple})[TAB]();}
+setTab(TAB);
+
+(async()=>{
+  if(!window.claude?.use) return;
+  USER=await window.claude.use('user'); DB=await window.claude.use('db');
+  UID=USER?await USER.id():null;
+  if(!DB||!UID){DB=null;return;}
+  try{
+    const snap=await DB.doc('progress/'+UID).get();
+    if(snap.exists){const remote=JSON.parse(JSON.stringify(snap.data()));
+      if((remote.xp||0)>=(S.xp||0)) S=Object.assign(blank(),remote); else await save();}
+    else if(S.xp>0) await save();
+    try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+    DB.collection('progress').onSnapshot(qs=>{
+      PEOPLE=qs.docs.filter(d=>d.exists).map(d=>({id:d.id,data:JSON.parse(JSON.stringify(d.data()))}));
+      if(!PEOPLE.some(p=>p.id===UID)) PEOPLE.unshift({id:UID,data:S});
+      PEOPLE=PEOPLE.map(p=>p.id===UID?{id:UID,data:S}:p);
+      if(TAB==='couple'&&!R) renderCouple();
+    },err=>console.warn('progress feed',err));
+    if(!R) renderAll();
+  }catch(e){ console.warn(e); }
+})();
+</script>
+
+</body>
+</html>
